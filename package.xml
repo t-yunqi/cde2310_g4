@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>cde2310_g4_AY2526</name>
+  <name>cde2310_g4_ay2526</name>
   <version>0.0.0</version>
   <description>CDE2310 custom maze exploration package</description>
   <maintainer email="your_email@example.com">yanxu</maintainer>

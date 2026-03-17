@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'cde2310_g4_AY2526'
+package_name = 'cde2310_g4_ay2526'
 
 setup(
     name=package_name,
@@ -26,7 +26,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'frontier_explorer = cde2310_g4_AY2526.main:main',
+            'frontier_explorer = cde2310_g4_ay2526.main:main',
         ],
     },
 )

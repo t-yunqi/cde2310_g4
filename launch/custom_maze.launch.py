@@ -7,13 +7,23 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    project_pkg = get_package_share_directory('cde2310_g4_AY2526')
+    project_pkg = get_package_share_directory('cde2310_g4_ay2526')
     tb3_gazebo_pkg = get_package_share_directory('turtlebot3_gazebo')
     tb3_desc_pkg = get_package_share_directory('turtlebot3_description')
     ros_gz_sim_pkg = get_package_share_directory('ros_gz_sim')
+
+    nav2_bringup_pkg = get_package_share_directory('nav2_bringup')
+    tb3_nav2_pkg = get_package_share_directory('turtlebot3_navigation2')
+
+    nav2_params = os.path.join(
+        tb3_nav2_pkg,
+        'param',
+        'burger.yaml'
+    )
 
     launch_file_dir = os.path.join(tb3_gazebo_pkg, 'launch')
 
@@ -117,6 +127,17 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
 
+    nav2_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_pkg, 'launch', 'navigation_launch.py')
+        ),
+        launch_arguments={
+            'use_sim_time': 'true',
+            'autostart': 'true',
+            'params_file': nav2_params,
+        }.items()
+    )
+
     return LaunchDescription([
         set_gz_resource,
         set_ign_resource,
@@ -126,4 +147,5 @@ def generate_launch_description():
         cartographer_node,
         cartographer_occupancy_grid_node,
         rviz_cmd,
+        nav2_cmd,
     ])

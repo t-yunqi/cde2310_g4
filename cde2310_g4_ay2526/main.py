@@ -5,6 +5,7 @@
 # adapted from https://github.com/SeanReg/nav2_wavefront_frontier_exploration
 
 import math
+import random
 
 import rclpy
 from rclpy.node import Node
@@ -23,7 +24,7 @@ from tf2_ros.transform_listener import TransformListener
 # If your AprilTag package uses a different message, change this import and callback only.
 # from apriltag_msgs.msg import AprilTagDetectionArray
 
-from cde2310_g4_AY2526.frontier_detection import (
+from cde2310_g4_ay2526.frontier_detection import (
     OccupancyGrid2d,
     detect_frontiers,
     choose_frontier,
@@ -37,7 +38,7 @@ class FrontierExplorer(Node):
         # self.declare_parameter('tag_topic', '/tag_detections')
         # self.declare_parameter('target_tag_id', -1)   # -1 = any detected tag interrupts navigation
         self.declare_parameter('planner_period_sec', 1.0)
-        self.declare_parameter('min_frontier_size', 5)
+        self.declare_parameter('min_frontier_size', 1)
         self.declare_parameter('frontier_strategy', 'nearest')
 
         map_topic = self.get_parameter('map_topic').value
@@ -72,11 +73,32 @@ class FrontierExplorer(Node):
         self.nav_busy = False
         # self.tag_detected = False
         self.exploration_done = False
+        self.no_frontier_count = 0
+        self.no_frontier_limit = 1000
 
         self.get_logger().info('Frontier explorer main node started.')
 
     def map_callback(self, msg: OccupancyGrid):
         self.map_msg = msg
+
+    
+    def pick_random_goal(self):
+        width = self.map_msg.info.width
+        height = self.map_msg.info.height
+        res = self.map_msg.info.resolution
+        origin = self.map_msg.info.origin
+
+        for _ in range(200):  # try more samples for reliability
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+
+            idx = y * width + x
+            if self.map_msg.data[idx] == 0:  # free space
+                wx = origin.position.x + (x + 0.5) * res
+                wy = origin.position.y + (y + 0.5) * res
+                return wx, wy
+
+        return None
 
     # def tag_callback(self, msg: AprilTagDetectionArray):
     #     target_tag_id = int(self.get_parameter('target_tag_id').value)
@@ -136,16 +158,64 @@ class FrontierExplorer(Node):
             return
 
         costmap = OccupancyGrid2d(self.map_msg)
+        self.get_logger().info(
+            f'Map received: width={self.map_msg.info.width}, '
+            f'height={self.map_msg.info.height}, '
+            f'resolution={self.map_msg.info.resolution:.3f}'
+        )
+
+        data = list(self.map_msg.data)
+        free_count = sum(1 for c in data if c == 0)
+        unknown_count = sum(1 for c in data if c == -1)
+        occupied_count = sum(1 for c in data if c > 0)
+
+        self.get_logger().info(
+            f'Cells: free={free_count}, unknown={unknown_count}, occupied={occupied_count}'
+        )
+
+        mx, my = costmap.world_to_map(
+            robot_pose_stamped.pose.position.x,
+            robot_pose_stamped.pose.position.y
+        )
+        self.get_logger().info(
+            f'Robot map cell=({mx}, {my}), cost={costmap.get_cost(mx, my)}'
+        )
+
         frontiers = detect_frontiers(
             costmap,
             robot_pose_stamped.pose,
             min_frontier_size=int(self.get_parameter('min_frontier_size').value)
         )
+        self.get_logger().info(f'Detected {len(frontiers)} frontiers.')
 
         if not frontiers:
-            self.get_logger().info('No more frontiers found. Exploration complete.')
-            self.exploration_done = True
+            self.no_frontier_count += 1
+
+            self.get_logger().info(
+                f'No frontiers found this cycle ({self.no_frontier_count}/{self.no_frontier_limit}).'
+            )
+
+            # 🔥 Fallback to random exploration
+            goal_xy = self.pick_random_goal()
+
+            if goal_xy is None:
+                self.get_logger().warn("Random exploration failed to find a goal.")
+                return
+
+            self.get_logger().info(
+                f'[Fallback] Sending random goal x={goal_xy[0]:.2f}, y={goal_xy[1]:.2f}'
+            )
+
+            goal = PoseStamped()
+            goal.header.frame_id = 'map'
+            goal.header.stamp = self.get_clock().now().to_msg()
+            goal.pose.position.x = goal_xy[0]
+            goal.pose.position.y = goal_xy[1]
+            goal.pose.orientation = robot_pose_stamped.pose.orientation
+
+            self.send_nav_goal(goal)
             return
+        self.no_frontier_count = 0
 
         strategy = self.get_parameter('frontier_strategy').value
         chosen = choose_frontier(frontiers, robot_pose_stamped.pose, strategy=strategy)
