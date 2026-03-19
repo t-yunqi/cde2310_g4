@@ -32,7 +32,7 @@ class FrontierExplorer(Node):
         self.declare_parameter('map_topic', '/map')
         self.declare_parameter('planner_period_sec', 1.0)
         self.declare_parameter('min_frontier_size', 3)
-        self.declare_parameter('frontier_strategy', 'nearest')
+        self.declare_parameter('frontier_strategy', 'largest')
         self.declare_parameter('fallback_min_obstacle_clearance_cells', 2)
         self.declare_parameter('fallback_revisit_radius_m', 0.8)
         self.declare_parameter('max_recent_fallbacks', 15)
