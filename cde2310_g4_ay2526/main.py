@@ -1,12 +1,8 @@
-#main code for AY2526 CDE2310 attempt
-
 #!/usr/bin/env python3
-
-# adapted from https://github.com/SeanReg/nav2_wavefront_frontier_exploration
+# adapted from wavefront frontier exploration style,
+# with fallback viewpoint selection when no reachable frontier is found
 
 import math
-import random
-
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
@@ -21,28 +17,27 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-# If your AprilTag package uses a different message, change this import and callback only.
-# from apriltag_msgs.msg import AprilTagDetectionArray
-
 from cde2310_g4_ay2526.frontier_detection import (
     OccupancyGrid2d,
     detect_frontiers,
     choose_frontier,
+    choose_fallback_viewpoint,
 )
+
 
 class FrontierExplorer(Node):
     def __init__(self):
         super().__init__('frontier_explorer_main')
 
         self.declare_parameter('map_topic', '/map')
-        # self.declare_parameter('tag_topic', '/tag_detections')
-        # self.declare_parameter('target_tag_id', -1)   # -1 = any detected tag interrupts navigation
         self.declare_parameter('planner_period_sec', 1.0)
-        self.declare_parameter('min_frontier_size', 1)
+        self.declare_parameter('min_frontier_size', 3)
         self.declare_parameter('frontier_strategy', 'nearest')
+        self.declare_parameter('fallback_min_obstacle_clearance_cells', 2)
+        self.declare_parameter('fallback_revisit_radius_m', 0.8)
+        self.declare_parameter('max_recent_fallbacks', 15)
 
         map_topic = self.get_parameter('map_topic').value
-        # tag_topic = self.get_parameter('tag_topic').value
 
         self.map_sub = self.create_subscription(
             OccupancyGrid,
@@ -50,13 +45,6 @@ class FrontierExplorer(Node):
             self.map_callback,
             10
         )
-
-        # self.tag_sub = self.create_subscription(
-        #     AprilTagDetectionArray,
-        #     tag_topic,
-        #     self.tag_callback,
-        #     10
-        # )
 
         self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
@@ -71,51 +59,18 @@ class FrontierExplorer(Node):
         self.map_msg = None
         self.goal_handle = None
         self.nav_busy = False
-        # self.tag_detected = False
         self.exploration_done = False
+
         self.no_frontier_count = 0
-        self.no_frontier_limit = 1000
+        self.failed_goal_count = 0
+
+        self.last_goal_type = None
+        self.recent_fallback_points = []
 
         self.get_logger().info('Frontier explorer main node started.')
 
     def map_callback(self, msg: OccupancyGrid):
         self.map_msg = msg
-
-    
-    def pick_random_goal(self):
-        width = self.map_msg.info.width
-        height = self.map_msg.info.height
-        res = self.map_msg.info.resolution
-        origin = self.map_msg.info.origin
-
-        for _ in range(200):  # try more samples for reliability
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-
-            idx = y * width + x
-            if self.map_msg.data[idx] == 0:  # free space
-                wx = origin.position.x + (x + 0.5) * res
-                wy = origin.position.y + (y + 0.5) * res
-                return wx, wy
-
-        return None
-
-    # def tag_callback(self, msg: AprilTagDetectionArray):
-    #     target_tag_id = int(self.get_parameter('target_tag_id').value)
-
-    #     valid = False
-    #     for det in msg.detections:
-    #         if len(det.id) == 0:
-    #             continue
-    #         if target_tag_id == -1 or int(det.id[0]) == target_tag_id:
-    #             valid = True
-    #             break
-
-    #     if valid:
-    #         if not self.tag_detected:
-    #             self.get_logger().info('Valid AprilTag detected. Interrupting frontier navigation.')
-    #         self.tag_detected = True
-    #         self.cancel_current_goal()
 
     def get_robot_pose_in_map(self):
         try:
@@ -132,19 +87,17 @@ class FrontierExplorer(Node):
         pose = PoseStamped()
         pose.header.frame_id = 'map'
         pose.header.stamp = self.get_clock().now().to_msg()
+
         pose.pose.position.x = t.transform.translation.x
         pose.pose.position.y = t.transform.translation.y
         pose.pose.position.z = t.transform.translation.z
         pose.pose.orientation = t.transform.rotation
+
         return pose
 
     def control_loop(self):
         if self.exploration_done:
             return
-
-        # # If AprilTag has been detected, stop exploration.
-        # if self.tag_detected:
-        #     return
 
         if self.nav_busy:
             return
@@ -158,11 +111,6 @@ class FrontierExplorer(Node):
             return
 
         costmap = OccupancyGrid2d(self.map_msg)
-        self.get_logger().info(
-            f'Map received: width={self.map_msg.info.width}, '
-            f'height={self.map_msg.info.height}, '
-            f'resolution={self.map_msg.info.resolution:.3f}'
-        )
 
         data = list(self.map_msg.data)
         free_count = sum(1 for c in data if c == 0)
@@ -170,73 +118,96 @@ class FrontierExplorer(Node):
         occupied_count = sum(1 for c in data if c > 0)
 
         self.get_logger().info(
-            f'Cells: free={free_count}, unknown={unknown_count}, occupied={occupied_count}'
+            f'Map stats: free={free_count}, unknown={unknown_count}, occupied={occupied_count}'
         )
 
-        mx, my = costmap.world_to_map(
-            robot_pose_stamped.pose.position.x,
-            robot_pose_stamped.pose.position.y
-        )
-        self.get_logger().info(
-            f'Robot map cell=({mx}, {my}), cost={costmap.get_cost(mx, my)}'
-        )
+        try:
+            mx, my = costmap.world_to_map(
+                robot_pose_stamped.pose.position.x,
+                robot_pose_stamped.pose.position.y
+            )
+            self.get_logger().info(
+                f'Robot map cell=({mx}, {my}), cost={costmap.get_cost(mx, my)}'
+            )
+        except ValueError:
+            self.get_logger().warn('Robot pose is outside map bounds.')
+            return
 
         frontiers = detect_frontiers(
             costmap,
             robot_pose_stamped.pose,
             min_frontier_size=int(self.get_parameter('min_frontier_size').value)
         )
+
         self.get_logger().info(f'Detected {len(frontiers)} frontiers.')
 
-        if not frontiers:
-            self.no_frontier_count += 1
+        strategy = self.get_parameter('frontier_strategy').value
+        chosen_frontier = choose_frontier(
+            frontiers,
+            robot_pose_stamped.pose,
+            strategy=strategy
+        )
 
-            self.get_logger().info(
-                f'No frontiers found this cycle ({self.no_frontier_count}/{self.no_frontier_limit}).'
-            )
-
-            # 🔥 Fallback to random exploration
-            goal_xy = self.pick_random_goal()
-
-            if goal_xy is None:
-                self.get_logger().warn("Random exploration failed to find a goal.")
-                return
-
-            self.get_logger().info(
-                f'[Fallback] Sending random goal x={goal_xy[0]:.2f}, y={goal_xy[1]:.2f}'
-            )
+        if chosen_frontier is not None:
+            self.no_frontier_count = 0
 
             goal = PoseStamped()
             goal.header.frame_id = 'map'
             goal.header.stamp = self.get_clock().now().to_msg()
-            goal.pose.position.x = goal_xy[0]
-            goal.pose.position.y = goal_xy[1]
+            goal.pose.position.x = chosen_frontier.x
+            goal.pose.position.y = chosen_frontier.y
+            goal.pose.position.z = 0.0
             goal.pose.orientation = robot_pose_stamped.pose.orientation
 
+            self.get_logger().info(
+                f'Sending frontier goal '
+                f'x={goal.pose.position.x:.2f}, y={goal.pose.position.y:.2f}, '
+                f'size={chosen_frontier.size}'
+            )
+
+            self.last_goal_type = 'frontier'
             self.send_nav_goal(goal)
             return
-        self.no_frontier_count = 0
 
-        strategy = self.get_parameter('frontier_strategy').value
-        chosen = choose_frontier(frontiers, robot_pose_stamped.pose, strategy=strategy)
+        self.no_frontier_count += 1
+        self.get_logger().info(
+            f'No usable frontier this cycle. '
+            f'Fallback attempt {self.no_frontier_count}.'
+        )
 
-        if chosen is None:
-            self.get_logger().warn('Frontier detection returned no valid goal.')
+        fallback = choose_fallback_viewpoint(
+            costmap=costmap,
+            robot_pose=robot_pose_stamped.pose,
+            recent_points=self.recent_fallback_points,
+            min_clearance_cells=int(
+                self.get_parameter('fallback_min_obstacle_clearance_cells').value
+            ),
+            revisit_radius=float(
+                self.get_parameter('fallback_revisit_radius_m').value
+            ),
+        )
+
+        if fallback is None:
+            self.get_logger().warn(
+                'No fallback viewpoint found. Exploration may be complete or trapped.'
+            )
             return
+
+        fx, fy = fallback
 
         goal = PoseStamped()
         goal.header.frame_id = 'map'
         goal.header.stamp = self.get_clock().now().to_msg()
-        goal.pose.position.x = chosen.x
-        goal.pose.position.y = chosen.y
+        goal.pose.position.x = fx
+        goal.pose.position.y = fy
         goal.pose.position.z = 0.0
-
-        # Use current robot orientation to avoid unnecessary spin at frontier goal.
         goal.pose.orientation = robot_pose_stamped.pose.orientation
 
         self.get_logger().info(
-            f'Sending frontier goal x={goal.pose.position.x:.2f}, y={goal.pose.position.y:.2f}, size={chosen.size}'
+            f'[Fallback viewpoint] Sending goal x={fx:.2f}, y={fy:.2f}'
         )
+
+        self.last_goal_type = 'fallback'
         self.send_nav_goal(goal)
 
     def send_nav_goal(self, goal_pose: PoseStamped):
@@ -248,6 +219,7 @@ class FrontierExplorer(Node):
         goal_msg.pose = goal_pose
 
         self.nav_busy = True
+
         send_future = self.nav_client.send_goal_async(goal_msg)
         send_future.add_done_callback(self.goal_response_callback)
 
@@ -255,12 +227,12 @@ class FrontierExplorer(Node):
         goal_handle = future.result()
 
         if goal_handle is None or not goal_handle.accepted:
-            self.get_logger().warn('Frontier goal rejected.')
+            self.get_logger().warn('Goal rejected.')
             self.nav_busy = False
             return
 
         self.goal_handle = goal_handle
-        self.get_logger().info('Frontier goal accepted.')
+        self.get_logger().info('Goal accepted.')
 
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(self.goal_result_callback)
@@ -276,28 +248,42 @@ class FrontierExplorer(Node):
         status = result.status
 
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.get_logger().info('Frontier goal reached.')
+            self.get_logger().info('Goal reached successfully.')
+
+            if self.last_goal_type == 'fallback' and self.goal_handle is not None:
+                goal_pose = self.goal_handle.request.pose.pose.position
+                self.recent_fallback_points.append((goal_pose.x, goal_pose.y))
+
+                max_recent = int(self.get_parameter('max_recent_fallbacks').value)
+                if len(self.recent_fallback_points) > max_recent:
+                    self.recent_fallback_points.pop(0)
+
         elif status == GoalStatus.STATUS_CANCELED:
-            self.get_logger().info('Frontier goal canceled.')
+            self.get_logger().info('Goal canceled.')
         else:
-            self.get_logger().warn(f'Frontier goal ended with status {status}.')
+            self.get_logger().warn(f'Goal ended with status {status}.')
+
+        self.goal_handle = None
 
     def cancel_current_goal(self):
         if self.goal_handle is None:
             return
+
         if not self.nav_busy:
             return
 
-        self.get_logger().info('Canceling current frontier goal...')
+        self.get_logger().info('Canceling current goal...')
         cancel_future = self.goal_handle.cancel_goal_async()
         cancel_future.add_done_callback(self.cancel_done_callback)
 
     def cancel_done_callback(self, future):
-        self.get_logger().info('Cancel request sent to NavigateToPose.')
+        self.get_logger().info('Cancel request sent.')
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = FrontierExplorer()
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

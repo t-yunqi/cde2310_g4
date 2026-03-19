@@ -4,7 +4,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
@@ -90,6 +90,18 @@ def generate_launch_description():
         }.items()
     )
 
+    # bridge = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=[
+    #         '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+    #         '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+    #         '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+    #         '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+    #     ],
+    #     output='screen'
+    # )
+
     cartographer_node = Node(
         package='cartographer_ros',
         executable='cartographer_node',
@@ -138,14 +150,33 @@ def generate_launch_description():
         }.items()
     )
 
+    delayed_cartographer = TimerAction(
+        period=5.0,
+        actions=[
+            cartographer_node,
+            cartographer_occupancy_grid_node,
+        ]
+    )
+
+    delayed_rviz = TimerAction(
+        period=6.0,
+        actions=[rviz_cmd]
+    )
+
+    delayed_nav2 = TimerAction(
+        period=8.0,
+        actions=[nav2_cmd]
+    )
+
+
+
     return LaunchDescription([
         set_gz_resource,
         set_ign_resource,
         gazebo,
         robot_state_publisher_cmd,
         spawn_turtlebot_cmd,
-        cartographer_node,
-        cartographer_occupancy_grid_node,
-        rviz_cmd,
-        nav2_cmd,
+        delayed_cartographer,
+        delayed_rviz,
+        delayed_nav2,
     ])
