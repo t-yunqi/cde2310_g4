@@ -4,73 +4,58 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration
+from launch.actions import TimerAction
 
 
 def generate_launch_description():
-    project_pkg = get_package_share_directory('cde2310_g4_ay2526')
+    proj_pkg = get_package_share_directory('cde2310_g4_ay2526')
     tb3_gazebo_pkg = get_package_share_directory('turtlebot3_gazebo')
     tb3_desc_pkg = get_package_share_directory('turtlebot3_description')
     ros_gz_sim_pkg = get_package_share_directory('ros_gz_sim')
-
-    nav2_bringup_pkg = get_package_share_directory('nav2_bringup')
-    tb3_nav2_pkg = get_package_share_directory('turtlebot3_navigation2')
-
-    nav2_params = os.path.join(
-        tb3_nav2_pkg,
-        'param',
-        'burger.yaml'
-    )
+    slam_toolbox_pkg = get_package_share_directory('slam_toolbox')
+    nav2_pkg = get_package_share_directory('turtlebot3_navigation2')
 
     launch_file_dir = os.path.join(tb3_gazebo_pkg, 'launch')
 
     world = os.path.join(
-        project_pkg,
+        proj_pkg,
         'worlds',
         'custom_maze_CDE2310.sdf'
     )
 
-    rviz_config = os.path.join(
-        project_pkg,
-        'rviz',
-        'tb3_cartographer.rviz'
-    )
-
-    cartographer_config_dir = os.path.join(project_pkg, 'config')
-    cartographer_config_basename = 'turtlebot3_lds_2d.lua'
-
+    # Resource paths
     tb3_gazebo_parent = os.path.dirname(tb3_gazebo_pkg)
     tb3_desc_parent = os.path.dirname(tb3_desc_pkg)
 
     set_gz_resource = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
-        value=':'.join([
-            tb3_gazebo_parent,
-            tb3_desc_parent,
-        ])
+        value=':'.join([tb3_gazebo_parent, tb3_desc_parent])
     )
 
     set_ign_resource = SetEnvironmentVariable(
         name='IGN_GAZEBO_RESOURCE_PATH',
-        value=':'.join([
-            tb3_gazebo_parent,
-            tb3_desc_parent,
-        ])
+        value=':'.join([tb3_gazebo_parent, tb3_desc_parent])
     )
 
-    gazebo = IncludeLaunchDescription(
+    # Gazebo
+    gzserver_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(ros_gz_sim_pkg, 'launch', 'gz_sim.launch.py')
         ),
-        launch_arguments={
-            'gz_args': f'-r -v4 {world}',
-            'on_exit_shutdown': 'true'
-        }.items()
+        launch_arguments={'gz_args': ['-r -s -v4 ', world], 'on_exit_shutdown': 'true'}.items()
     )
 
+    gzclient_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(ros_gz_sim_pkg, 'launch', 'gz_sim.launch.py')
+        ),
+        launch_arguments={'gz_args': '-g -v4 '}.items()
+    )
+
+    # Robot
     robot_state_publisher_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(launch_file_dir, 'robot_state_publisher.launch.py')
@@ -84,99 +69,63 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(launch_file_dir, 'spawn_turtlebot3.launch.py')
         ),
-        launch_arguments={
-            'x_pose': '0.0',
-            'y_pose': '0.0'
-        }.items()
+        launch_arguments={'x_pose': '0.0', 'y_pose': '0.0'}.items()
     )
 
-    # bridge = Node(
-    #     package='ros_gz_bridge',
-    #     executable='parameter_bridge',
-    #     arguments=[
-    #         '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-    #         '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-    #         '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-    #         '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-    #     ],
-    #     output='screen'
-    # )
-
-    cartographer_node = Node(
-        package='cartographer_ros',
-        executable='cartographer_node',
-        name='cartographer_node',
-        output='screen',
-        parameters=[{'use_sim_time': True}],
-        arguments=[
-            '-configuration_directory', cartographer_config_dir,
-            '-configuration_basename', cartographer_config_basename,
-        ],
-        remappings=[
-            ('scan', '/scan'),
-            ('odom', '/odom'),
-        ]
-    )
-
-    cartographer_occupancy_grid_node = Node(
-        package='cartographer_ros',
-        executable='cartographer_occupancy_grid_node',
-        name='cartographer_occupancy_grid_node',
-        output='screen',
-        parameters=[{'use_sim_time': True}],
-        arguments=[
-            '-resolution', '0.05',
-            '-publish_period_sec', '1.0'
-        ]
-    )
-
-    rviz_cmd = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        output='screen',
-        arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': True}]
-    )
-
-    nav2_cmd = IncludeLaunchDescription(
+    # SLAM Toolbox
+    slam_toolbox_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_pkg, 'launch', 'navigation_launch.py')
+            os.path.join(slam_toolbox_pkg, 'launch', 'online_async_launch.py')
         ),
         launch_arguments={
-            'use_sim_time': 'true',
-            'autostart': 'true',
-            'params_file': nav2_params,
+            'use_sim_time': 'True'
         }.items()
     )
 
-    delayed_cartographer = TimerAction(
-        period=5.0,
-        actions=[
-            cartographer_node,
-            cartographer_occupancy_grid_node,
-        ]
+    # Nav2
+    nav2_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_pkg, 'launch', 'navigation2.launch.py')
+        ),
+        launch_arguments={
+            'use_sim_time': 'True',
+            'slam': 'True'
+        }.items()
     )
 
-    delayed_rviz = TimerAction(
-        period=6.0,
-        actions=[rviz_cmd]
+    # Frontier Explorer Node
+    frontier_explorer_node = Node(
+        package='cde2310_g4_ay2526',
+        executable='frontier_explorer',
+        name='frontier_explorer',
+        output='screen'
     )
-
-    delayed_nav2 = TimerAction(
-        period=8.0,
-        actions=[nav2_cmd]
-    )
-
-
 
     return LaunchDescription([
         set_gz_resource,
         set_ign_resource,
-        gazebo,
+
+        gzserver_cmd,
+        gzclient_cmd,
+
         robot_state_publisher_cmd,
         spawn_turtlebot_cmd,
-        delayed_cartographer,
-        delayed_rviz,
-        delayed_nav2,
+
+        # Delay SLAM (wait for robot + topics to exist)
+        TimerAction(
+            period=10.0,
+            actions=[slam_toolbox_cmd]
+        ),
+
+        # Delay Nav2 (wait for SLAM to start publishing map + TF)
+        TimerAction(
+            period=11.0,
+            actions=[nav2_cmd]
+        ),
+
+        # Delay Frontier Explorer (wait for Nav2 to be ready)
+        TimerAction(
+            period=15.0,
+            actions=[frontier_explorer_node]
+        ),
     ])
