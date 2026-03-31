@@ -26,7 +26,8 @@ Author: Nathan Sprague
 Version: 10/26/2020
 
 """
-
+from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import TransformStamped
 import rclpy
 import rclpy.node
 from rclpy.qos import qos_profile_sensor_data
@@ -35,7 +36,7 @@ import numpy as np
 import cv2
 import tf_transformations
 from sensor_msgs.msg import CameraInfo
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from geometry_msgs.msg import PoseArray, Pose
 from ros2_aruco_interfaces.msg import ArucoMarkers
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
@@ -44,7 +45,7 @@ from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 class ArucoNode(rclpy.node.Node):
     def __init__(self):
         super().__init__("aruco_node")
-
+        self.tf_broadcaster = TransformBroadcaster(self)
         # Declare and read parameters
         self.declare_parameter(
             name="marker_size",
@@ -91,6 +92,7 @@ class ArucoNode(rclpy.node.Node):
             ),
         )
 
+
         self.marker_size = (
             self.get_parameter("marker_size").get_parameter_value().double_value
         )
@@ -104,16 +106,30 @@ class ArucoNode(rclpy.node.Node):
         image_topic = (
             self.get_parameter("image_topic").get_parameter_value().string_value
         )
+
         self.get_logger().info(f"Image topic: {image_topic}")
+        if image_topic == "/cam_left/image_raw/compressed":
+            self.camera_frame = "cam_left_camera_link"
+        elif image_topic == "/cam_right/image_raw/compressed":
+            self.camera_frame = "cam_right_camera_link"
+        elif image_topic == "/rpi/image_raw/compressed":
+            self.camera_frame = 'rpi_camera_link'
+        else:
+            self.camera_frame = "No camera frame detected"
+            self.get_logger().warn('camera frame not defined')
+        self.get_logger().info(f'camera frame : {self.camera_frame}')
+
 
         info_topic = (
             self.get_parameter("camera_info_topic").get_parameter_value().string_value
         )
         self.get_logger().info(f"Image info topic: {info_topic}")
 
-        self.camera_frame = (
-            self.get_parameter("camera_frame").get_parameter_value().string_value
-        )
+
+        #(
+       #     self.get_parameter("camera_frame").get_parameter_value().string_value
+       # )
+        
 
         # Make sure we have a valid dictionary id:
         try:
@@ -133,7 +149,7 @@ class ArucoNode(rclpy.node.Node):
         )
 
         self.create_subscription(
-            Image, image_topic, self.image_callback, qos_profile_sensor_data
+            CompressedImage, image_topic, self.image_callback, qos_profile_sensor_data
         )
 
         # Set up publishers
@@ -145,8 +161,8 @@ class ArucoNode(rclpy.node.Node):
         self.intrinsic_mat = None
         self.distortion = None
 
-        self.aruco_dictionary = self.aruco_dictionary = cv2.aruco.Dictionary_get(dictionary_id)
-        self.aruco_parameters = cv2.aruco.DetectorParameters_create()
+        self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(dictionary_id)
+        self.aruco_parameters = cv2.aruco.DetectorParameters()
         self.bridge = CvBridge()
 
     def info_callback(self, info_msg):
@@ -161,7 +177,7 @@ class ArucoNode(rclpy.node.Node):
             self.get_logger().warn("No camera info has been received!")
             return
 
-        cv_image = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding="mono8")
+        cv_image = self.bridge.compressed_imgmsg_to_cv2(img_msg, desired_encoding="mono8")
         markers = ArucoMarkers()
         pose_array = PoseArray()
         if self.camera_frame == "":
@@ -187,13 +203,28 @@ class ArucoNode(rclpy.node.Node):
                     corners, self.marker_size, self.intrinsic_mat, self.distortion
                 )
             for i, marker_id in enumerate(marker_ids):
+                if marker_id > 10:
+                    continue
                 pose = Pose()
-                pose.position.x = tvecs[i][0][0]
-                pose.position.y = tvecs[i][0][1]
-                pose.position.z = tvecs[i][0][2]
+
+                # Remap OpenCV axes (X=right, Y=down, Z=forward)
+                # to ROS link frame axes (X=forward, Y=left, Z=up)
+                pose.position.x = tvecs[i][0][2]   # OpenCV Z → ROS X (forward)
+                pose.position.y = -tvecs[i][0][0]  # OpenCV X → ROS Y (left)
+                pose.position.z = -tvecs[i][0][1]  # OpenCV Y → ROS Z (up)
 
                 rot_matrix = np.eye(4)
                 rot_matrix[0:3, 0:3] = cv2.Rodrigues(np.array(rvecs[i][0]))[0]
+
+                # Apply axis remapping to rotation as well
+                axis_remap = np.array([
+                    [0,  0,  1,  0],
+                    [-1, 0,  0,  0],
+                    [0, -1,  0,  0],
+                    [0,  0,  0,  1]
+                ], dtype=float)
+                rot_matrix = axis_remap @ rot_matrix
+
                 quat = tf_transformations.quaternion_from_matrix(rot_matrix)
 
                 pose.orientation.x = quat[0]
@@ -204,6 +235,27 @@ class ArucoNode(rclpy.node.Node):
                 pose_array.poses.append(pose)
                 markers.poses.append(pose)
                 markers.marker_ids.append(marker_id[0])
+
+                t = TransformStamped()
+                t.header.stamp = self.get_clock().now().to_msg()
+
+                if self.camera_frame == "":
+                    t.header.frame_id = self.info_msg.header.frame_id
+                else:
+                    t.header.frame_id = self.camera_frame
+
+                t.child_frame_id = f"aruco_marker_{marker_id[0]}"
+
+                t.transform.translation.x = pose.position.x
+                t.transform.translation.y = pose.position.y
+                t.transform.translation.z = pose.position.z
+
+                t.transform.rotation.x = pose.orientation.x
+                t.transform.rotation.y = pose.orientation.y
+                t.transform.rotation.z = pose.orientation.z
+                t.transform.rotation.w = pose.orientation.w
+
+                self.tf_broadcaster.sendTransform(t)
 
             self.poses_pub.publish(pose_array)
             self.markers_pub.publish(markers)

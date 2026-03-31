@@ -6,11 +6,11 @@ def generate_launch_description():
     # Define your transforms here for easy editing
     # Format: [x, y, z, yaw, pitch, roll, parent, child]
     camera_transforms = [
-        [1,1,1,1,1,1, 'base_link', 'cam_left_camera_link'],
+        [-0.00295,0.09795,0.11795,1.5707963,0,0, 'base_link', 'cam_left_camera_link'],
         #'x_l', 'y_l', 'z_l', 'yaw_l', 'pitch_l', 'roll_l', THESE VALUES ARE WRONG plz change
-        [1,1,1,1,1,1, 'base_link', 'cam_right_camera_link'],
+        [-0.00323,-0.09785,0.1178,-1.5707963,0,0, 'base_link', 'cam_right_camera_link'],
         #'x_r', 'y_r', 'z_r', 'yaw_r', 'pitch_r', 'roll_r',
-        [1,1,1,1,1,1, 'base_link', 'rpi_camera_link']
+        [0.07413,-0.0119,104.96,0,0,0, 'base_link', 'rpi_camera_link']
         #'x_rp', 'y_rp', 'z_rp', 'yaw_rp', 'pitch_rp', 'roll_rp',
     ]
 
