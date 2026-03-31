@@ -34,7 +34,7 @@ class FrontierExplorer(Node):
         self.declare_parameter('map_topic', '/map')
         self.declare_parameter('planner_period_sec', 1.0)
         self.declare_parameter('min_frontier_size', 3)
-        self.declare_parameter('frontier_strategy', 'largest')
+        self.declare_parameter('frontier_strategy', 'farthest_dijkstra')
         self.declare_parameter('fallback_min_obstacle_clearance_cells', 2)
         self.declare_parameter('fallback_revisit_radius_m', 0.8)
         self.declare_parameter('max_recent_fallbacks', 15)
@@ -161,12 +161,14 @@ class FrontierExplorer(Node):
         )
 
         self.get_logger().info(f'Detected {len(frontiers)} frontiers.')
+        self.get_logger().info(f'Detected these {frontiers}.')
 
         strategy = self.get_parameter('frontier_strategy').value
-        chosen_frontier = choose_frontier(
+        chosen_frontier, goal_cell = choose_frontier(
             frontiers,
             robot_pose_stamped.pose,
-            strategy=strategy
+            strategy=strategy,
+            costmap=costmap
         )
 
         if chosen_frontier is not None:
@@ -175,10 +177,44 @@ class FrontierExplorer(Node):
             goal = PoseStamped()
             goal.header.frame_id = 'map'
             goal.header.stamp = self.get_clock().now().to_msg()
-            goal.pose.position.x = chosen_frontier.x
-            goal.pose.position.y = chosen_frontier.y
             goal.pose.position.z = 0.0
             goal.pose.orientation = robot_pose_stamped.pose.orientation
+
+            # For Dijkstra-based strategies, use the reachable free-space goal cell.
+            # Otherwise fall back to the frontier centroid.
+            if goal_cell is not None:
+                self.get_logger().info(
+                    f'Sending Dijkstra frontier goal '
+                    f'x={goal.pose.position.x:.2f}, y={goal.pose.position.y:.2f}, '
+                    f'goal_cell={goal_cell}, size={chosen_frontier.size}'
+                )
+                gx, gy = costmap.map_to_world(goal_cell[0], goal_cell[1])
+                goal.pose.position.x = gx
+                goal.pose.position.y = gy
+            else:
+                self.get_logger().info(
+                    f'Sending centroid frontier goal '
+                    f'x={goal.pose.position.x:.2f}, y={goal.pose.position.y:.2f}, '
+                    f'size={chosen_frontier.size}'
+                )
+                goal.pose.position.x = chosen_frontier.x
+                goal.pose.position.y = chosen_frontier.y
+
+            # Final safety check before sending to Nav2
+            try:
+                gmx, gmy = costmap.world_to_map(
+                    goal.pose.position.x,
+                    goal.pose.position.y
+                )
+                self.get_logger().info(
+                    f'Goal map cell=({gmx}, {gmy})'
+                )
+            except ValueError:
+                self.get_logger().warn(
+                    f'Rejected out-of-bounds goal at '
+                    f'x={goal.pose.position.x:.2f}, y={goal.pose.position.y:.2f}'
+                )
+                return
 
             self.get_logger().info(
                 f'Sending frontier goal '
