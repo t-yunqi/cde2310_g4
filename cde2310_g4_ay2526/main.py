@@ -7,15 +7,17 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
-
-from geometry_msgs.msg import PoseStamped
+from rclpy.qos import qos_profile_sensor_data
+from geometry_msgs.msg import PoseStamped, PoseArray
 from nav_msgs.msg import OccupancyGrid
 from nav2_msgs.action import NavigateToPose
 from action_msgs.msg import GoalStatus
-
-from tf2_ros import TransformException
+import threading
+from tf2_ros import TransformException, Buffer, TransformListener
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf2_geometry_msgs import do_transform_pose
+
 
 from cde2310_g4_ay2526.frontier_detection import (
     OccupancyGrid2d,
@@ -54,6 +56,25 @@ class FrontierExplorer(Node):
         self.timer = self.create_timer(
             float(self.get_parameter('planner_period_sec').value),
             self.control_loop
+        )
+
+        self.left_aruco_listener = self.create_subscription(
+            PoseArray,
+            "/cam_left/aruco_poses",
+            self.posearray_to_goal,
+            qos_profile_sensor_data
+        )
+        self.right_aruco_listener = self.create_subscription(
+            PoseArray,
+            "/cam_right/aruco_poses",
+            self.posearray_to_goal,
+            qos_profile_sensor_data
+        )
+        self.rpi_aruco_listener = self.create_subscription(
+            PoseArray,
+            "/rpi/aruco_poses",
+            self.posearray_to_goal,
+            qos_profile_sensor_data
         )
 
         self.map_msg = None
@@ -208,7 +229,30 @@ class FrontierExplorer(Node):
         )
 
         self.last_goal_type = 'fallback'
-        self.send_nav_goal(goal)
+        self.send_nav_goal(goal)                                                                                                                                            
+    
+    def aruco_callback(self, msg):
+        """
+        msg.header: Contains timestamp and frame_id (usually 'camera_link')
+        msg.poses: A list of geometry_msgs/msg/Pose objects
+        """                     
+        # Check if any markers were actually detected
+        if not msg.poses or msg.:
+            self.get_logger().info("No ArUco markers in sight.")
+            return
+
+        self.get_logger().info(f"Detected {len(msg.poses)} markers.")
+
+        for i, pose in enumerate(msg.poses):
+            # Accessing position (x, y, z)
+            pos = pose.position
+            # Accessing orientation (x, y, z, w)
+            ori = pose.orientation
+
+            self.get_logger().info(
+                f"Marker {i} -> Position: x={pos.x:.2f}, y={pos.y:.2f}, z={pos.z:.2f}"
+            )
+    
 
     def send_nav_goal(self, goal_pose: PoseStamped):
         if not self.nav_client.wait_for_server(timeout_sec=1.0):
