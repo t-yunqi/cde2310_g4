@@ -273,7 +273,7 @@ class FrontierExplorer(Node):
         msg.poses: A list of geometry_msgs/msg/Pose objects
         """                     
         # Check if any markers were actually detected
-        if not msg.poses or msg.:
+        if not msg.poses or msg.header:
             self.get_logger().info("No ArUco markers in sight.")
             return
 
