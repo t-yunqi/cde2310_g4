@@ -94,8 +94,8 @@ class Coordinator(Node):
 
         # ===== Publishers / actions =====
         self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
-        from std_msgs.msg import Bool
-        self.dispense_pub = self.create_publisher(Bool, self.dispense_topic, 10)
+        from std_msgs.msg import String
+        self.dispense_pub = self.create_publisher(String, self.dispense_topic, 10)
 
         # ===== TF =====
         self.tf_buffer = Buffer()
@@ -385,15 +385,24 @@ class Coordinator(Node):
     # Dispense helpers
     # ------------------------------------------------------------------
 
-    def trigger_dispense(self):
-        # simple Bool pulse
-        from std_msgs.msg import Bool
-        msg = Bool()
-        msg.data = True
+    def trigger_dispense(self, mode): 
+        # mode should be "A" or "B"
+        from std_msgs.msg import String
+
+        msg = String()
+
+        if mode == "A":
+            msg.data = "START_A"
+        elif mode == "B":
+            msg.data = "START_B"
+        else:
+            self.get_logger().error(f"Invalid mode: {mode}")
+            return
+
         self.dispense_pub.publish(msg)
         self.last_dispense_time_sec = self.now_sec()
         self.release_frame_counter = 0
-        self.get_logger().info('DISPENSE TRIGGERED')
+        self.get_logger().info(f'DISPENSE TRIGGERED: {msg.data}')
 
     def pose_is_in_release_zone(self, marker_id: int) -> bool:
         rec = self.get_fresh_detection(marker_id)
@@ -586,7 +595,7 @@ class Coordinator(Node):
             if self.update_release_counter(stationary_tag_id):
                 if self.nav_busy:
                     self.cancel_current_goal()
-                self.trigger_dispense()
+                self.trigger_dispense("A")
                 self.state = 'EXPLORE'
                 return
 
@@ -610,7 +619,7 @@ class Coordinator(Node):
 
         if self.state == 'WAIT_FOR_MOVING_TIN':
             if self.update_release_counter(moving_tag_id):
-                self.trigger_dispense()
+                self.trigger_dispense("B")
                 self.state = 'EXPLORE'
                 return
 
