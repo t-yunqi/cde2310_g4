@@ -354,7 +354,18 @@ class Coordinator(Node):
 
         goal = DockRobot.Goal()
         goal.dock_id = dock_id          # matches the ID in your docks YAML
+        goal.max_staging_time = 10.0
         goal.navigate_to_staging_pose = True  # let Nav2 drive to vicinity first
+
+        self.nav_busy = True
+        future = self.dock_client.send_goal_async(goal)
+        future.add_done_callback(self.dock_response_callback)
+        return True
+
+    def send_undock_goal(self):
+        goal = UndockRobot.Goal()
+        goal.dock_type = 'aruco_dock'
+        goal.max_undocking_time = 2.0
 
         self.nav_busy = True
         future = self.dock_client.send_goal_async(goal)
@@ -477,12 +488,14 @@ class Coordinator(Node):
 
     def mission_complete_cb(self, msg):
         if msg.data == 'FINISH_A':
-            self.get_logger().info('Station A complete. Resuming explore.')
+            self.get_logger().info('Station A complete. Undocking and resuming explore.')
             self.a_complete = True
+            self.send_undock_goal()
             self.state = 'EXPLORE'
         elif msg.data == 'FINISH_B':
-            self.get_logger().info('Station B complete. Resuming explore.')
+            self.get_logger().info('Station B complete. Undocking and resuming explore.')
             self.b_complete = True
+            self.send_undock_goal()
             self.state = 'EXPLORE'
     # ------------------------------------------------------------------
     # Dispense helpers
