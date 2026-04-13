@@ -439,7 +439,7 @@ class Coordinator(Node):
             return
 
         self.get_logger().info('Canceling current goal...')
-        cancel_future = self.goal_handle.async_cancel_goal()
+        cancel_future = self.goal_handle.cancel_goal_async()
         cancel_future.add_done_callback(self.cancel_done_callback)
 
     def cancel_done_callback(self, future):
