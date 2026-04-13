@@ -214,7 +214,7 @@ planner_server:
       allow_unknown: false                 # Set to false per burger.yaml
       max_iterations: 1000000             # Maximum total iterations to search
       max_planning_time: 3.0              # Max time in s for planner to plan
-      lattice_filepath: "/home/tanyunqi/burger_primitive.json" # replace path
+      lattice_filepath: "/home/tanyunqi/burger_primitive.json"
       angle_bin_size: 24                  # CRITICAL: Must match the .json primitive file
       # --- Motion Logic ---
       allow_reverse_expansion: true       # Enabled in burger.yaml (allows reversing)
@@ -302,14 +302,14 @@ docking_server:
     aruco_dock:
       plugin: "opennav_docking::SimpleChargingDock"
       docking_threshold: 0.03
-      staging_x_offset: -0.2
+      staging_x_offset: -0.28
       use_external_detection_pose: true
       use_battery_status: false
       use_stall_detection: false
       dock_direction: "forward"
       use_battery_status: false
       external_detection_timeout: 3.0
-      external_detection_translation_x: -0.12
+      external_detection_translation_x: -0.17
       external_detection_translation_y: 0.0
       external_detection_rotation_roll: 0.0
       external_detection_rotation_pitch: 0.0
@@ -334,7 +334,7 @@ docking_server:
       k_delta: 2.0
       v_linear_min: 0.01
       v_linear_max: 0.1
-      use_collision_detection: false
+      use_collision_detection: true
       costmap_topic: "local_costmap/costmap_raw"
       footprint_topic: "local_costmap/published_footprint"
       transform_tolerance: 1

@@ -119,7 +119,7 @@ class Coordinator(Node):
         self.last_goal_type: Optional[str] = None
         self.recent_fallback_points = []
         self.state_entry_time = 0.0
-        self.mission_timeout = 50.0
+        self.mission_timeout = 90.0
         self.state = 'EXPLORE'
         # EXPLORE, GO_TO_STATIONARY, GO_TO_MIDPOINT, WAIT_A_COMPLETE, WAIT_B_COMPLETE
 
@@ -334,7 +334,7 @@ class Coordinator(Node):
         goal = DockRobot.Goal()
         goal.dock_id = dock_id          # matches the ID in your docks YAML
         goal.max_staging_time = 10.0
-        goal.navigate_to_staging_pose = True  # let Nav2 drive to vicinity first
+        goal.navigate_to_staging_pose = False  # let Nav2 drive to vicinity first
 
         self.nav_busy = True
         future = self.dock_client.send_goal_async(goal)
@@ -348,7 +348,7 @@ class Coordinator(Node):
 
         goal = UndockRobot.Goal()
         goal.dock_type = 'aruco_dock'
-        goal.max_undocking_time = 2.0
+        # goal.max_undocking_time = 15.0
 
         self.nav_busy = True
         future = self.undock_client.send_goal_async(goal)
