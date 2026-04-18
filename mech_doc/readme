@@ -31,8 +31,7 @@ This document provides detailed instructions for printing, assembling, and integ
 
 ### Hardware
 - **Extra Waffle Plate**: Extra floor for payload.
-- **5x 30mm Standoff MF**
-- **5x 20mm Standoff MF**
+- **10x 30mm Standoff MF**
 - **5x 15mm Standoff MF**
 - **6x M2 Nut**
 - **4x M4 Nut**
@@ -62,9 +61,8 @@ This document provides detailed instructions for printing, assembling, and integ
 ### Step 3: Reinstalling Components
 1. **Reassemble TurtleBot Layers**:
    - Attach the payload floor to the TurtleBot.
-   - Use the following standoffs, aligning them with the ones on the present layer.
-        - 1x 30mm
-        - 1x 20mm
+   - Combine the following standoffs for each pillar, aligning them with the ones on the present layer.
+        - 2x 30mm
         - 1x 15mm
    - Attach the removed LIDAR floor to the top of the TurtleBot and secure with bolts.
 
