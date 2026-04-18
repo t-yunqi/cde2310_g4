@@ -1,13 +1,27 @@
-For first time setup
+RPI CAMERA STACK 
 
-cd turtlebot3_ws
+before getting started you should make sure that you have followed the setup guide for your rpi in the [turtlebot setup guide](https://emanual.robotis.com/docs/en/platform/turtlebot3/sbc_setup/#sbc-setup)
 
+this repository includes the launch files for:
+ - Camera Image Node
+ - Aruco Detection Node
+ - Camera to baselink tf static transform files
+
+
+
+
+<h2>how to setup cameras:</h2>
+[ON RPI]
+mkdir launchfiles && cd launchfiles
+git clone --branch rpi_code --single-branch https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+pip3 install opencv-contrib-python transforms3d
 colcon build
+source install/setup.bash
+chmod +x one.sh
 
-source ~/turtlebot3_ws/install/setup.bash
 
-To run with teleop do this:
-
-ros2 launch cde2310_g4_ay2526 custom_maze.launch.py
-
-This should get you rviz + gazebo with the custom maze and rviz is populated by the occupancy graph
+<h2>launch all files</h2>
+[inside launchfiles folder]
+./one.sh rpi
