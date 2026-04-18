@@ -7,4 +7,23 @@ Our Electrical Subsystem consists of the following:
    b) Station B
 5. System Power Draw & Runtime
 6. Schematics 
-7. Wiring & Connections
+
+## System Overview
+To fulfill the missions requirements, we built a dual-gate mechanism to deposit balls into the targets one at a time. Before the run starts, six balls are loaded onto the ramp behind the inner gate. When the robot docks, the inner gate opens to let exactly one ball roll into the middle holding chamber between the outer and inner gate. Then, the outer gate opens to drop that single ball into the tin can.
+Two SG90 servos act as the physcial gates and are driven by PWM signals directly from the Raspberry Pi's GPIO pins.
+
+
+## Key Components for Payload Delivery 
+| Payload Components | Units|
+| :--- | :--- |
+| SG90 Servo | x2 |
+| USB Camera | x2 |
+
+| Existing Components | Units|
+| :--- | :--- |
+| LiDAR | x1 |
+| USB Camera | x2 |
+| Dynamixel Motors | x2 |
+| LiPO Battery | x1 |
+| Raspberry Pi 4 | x1 |
+| OpenCR | x1  |
