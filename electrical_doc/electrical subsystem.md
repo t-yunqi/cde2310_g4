@@ -5,7 +5,7 @@ Our Electrical Subsystem consists of the following:
 3. Details on the Mechanism
    a) Station A
    b) Station B
-5. System Power Draw & Runtime
+5. Power Calculations
 6. Schematics 
 
 ## System Overview
@@ -29,7 +29,7 @@ Two SG90 servos act as the physcial gates and are driven by PWM signals directly
 | OpenCR | x1  |
 
 
-## Details on the Mechanismw
+## Details on the Mechanism
 The payload delivery is controlled by a dedicated ROS 2 node ('payload_delivery_node') that manages the two servos using a non-blocking queue system. This ensures the robot can continue processing sensor data while the gates are moving. Whenever the robot starts a run, the servos are initialized to their horizontal (closed) positions to block the balls. The delivery logic is split into two distinct mission protocols:
 
 ### Station A 
