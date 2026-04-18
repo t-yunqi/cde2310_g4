@@ -13,7 +13,6 @@ this repository includes the launch files for:
 
 
 <br></br>
-<br></br>
 ### setup [ON RPI]
 1. mkdir launchfiles && cd launchfiles
 2. git clone --branch rpi_code --single-branch https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git
@@ -28,8 +27,6 @@ this repository includes the launch files for:
 9. cd ~/launchfiles/camera_calibration_files
 10. cp * ~/.ros/camera-info
 
-<br></br>
-<br></br>
 <br></br>
 
 <h2>launch all files</h2>
