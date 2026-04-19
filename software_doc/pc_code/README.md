@@ -1,37 +1,63 @@
 # Remote PC setup instructions
 
+## Basic setup
+
 1. Install ROS2 and Turtlebot3 packages by following the instructions [here](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/#pc-setup) 
 
-2. Create a new directory to clone the auto_nav package.
+2. Install Navigation2 Docking server.
+``` bash
+sudo apt install ros-humble-opennav-docking
+```
+
+3. Create a new directory to clone the auto_nav package.
 ``` bash 
 $ mkdir -p ~/colcon_ws/src 
 ```
 
-3. Create a ros2 package and git clone auto_nav code into the newly created package.
+4. Create a ros2 package and git clone auto_nav code into the newly created package.
 ```bash
 $ cd ~/colcon_ws/src
-$ git clone https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git . -b pc_code
+$ git clone https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git ./cde2310_g4_ay2526 -b pc_code
 ```
 
-4. You can now build the package on your laptop. 
+5. Replace navigation_launch.py in your Navigation2 stack to include docking server node.
+```bash
+$ sudo cp ~/colcon_ws/src/cde2310_g4_ay2526/launch/navigation_launch.py /opt/ros/humble/share/nav2_bringup/launch/
+```
+
+6. You can now build the package on your laptop. 
 ```bash
 $ cd ~/colcon_ws
 $ colcon build
 ```
 
-5. Copy the navigation parameters file to your turtlebot3_navigation2 package
+7. Copy the navigation parameters file to your turtlebot3_navigation2 package
 ```bash
-$ cp ~/colcon_ws/src/CDE2310_g4_AY2526_turtlebot_ROS2/nav2_params/burger.yaml ~/turtlebot3_ws/src/turtlebot3/turtlebot3_navigation2/param/humble
+$ cp ~/colcon_ws/src/cde2310_g4_ay2526/nav2_params/burger.yaml ~/turtlebot3_ws/src/turtlebot3/turtlebot3_navigation2/param/humble
 ```
 
-6. Reconfigure the planner server's lattice_filepath in burger.yaml. Find the following line and edit it to the correct path:
+8. Reconfigure the planner server's lattice_filepath in burger.yaml. Find the following line and edit it to the correct path:
 ```
       lattice_filepath: "/home/tanyunqi/burger_primitive.json"
 ```
+> You should also modify your robot footprint under the ``footprint`` field under ``global_costmap`` using the right hand rule based on your CAD to prevent any inconsistencies.
 
-7. Run frontier explorer or coordinator using the following commands.
+9. Run frontier explorer or coordinator using the following commands.
 ```bash
 $ source ~/colcon_ws/install/setup.bash
 $ ros2 run cde2310_g4_ay2526 frontier_explorer
 $ ros2 run cde2310_g4_ay2526 coordinator
+```
+
+10. For mission execution and visualisation, launch mission.launch.py or run the following commands.
+```bash
+$ source ~/turtlebot3_ws/install/setup.bash
+$ source ~/colcon_ws/install/setup.bash
+$ ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=False 
+$ ros2 launch nav2_bringup navigation_launch.py \
+  map:=$(ros2 pkg prefix turtlebot3_navigation2)/share/turtlebot3_navigation2/map/map.yaml \
+  params_file:=$(ros2 pkg prefix turtlebot3_navigation2)/share/turtlebot3_navigation2/param/humble/burger.yaml \
+  use_sim_time:=False
+$ ros2 launch nav2_bringup rviz_launch.py use_sim_time:=False
+$ ros2 run cde2310_g4_ay2526 frontier_explorer
 ```
