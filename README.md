@@ -62,7 +62,7 @@ $ ros2 launch nav2_bringup rviz_launch.py use_sim_time:=False
 $ ros2 run cde2310_g4_ay2526 frontier_explorer
 ```
 
-## Camera visualisation
+## Camera visualisation setup
 1. Install ros2_aruco package and opencv dependencies.
 ``` bash
 $ pip install opencv-contrib-python
@@ -81,4 +81,27 @@ $ source install/setup.bash
 ``` bash
 $ cd ~/colcon_ws/src/cde2310_g4_ay2526
 $ python3 GUI_OVERLAY.py --camera <cam_left/cam_right>
+```
+
+## Custom simulation setup
+1. Install Turtlebot3 Simulation Package by following the instructions [here](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/).
+
+2. Move simulation files into respective folders in your turtlebot3_gazebo package.
+```bash
+$ cd ~/colcon_ws/src/cde2310_g4_ay2526/simulation_files
+$ mv worlds/custom_maze_CDE2310.sdf ~/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/worlds
+$ mv models/custom_maze ~/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models
+$ mv launch/custom_maze.launch.py ~/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/launch
+```
+
+3. Rebuild your turtlebot3_gazebo package.
+```bash
+$ cd ~/turtlebot3_ws
+$ colcon build --packages-select turtlebot3_gazebo
+$ source install/setup.bash
+```
+
+4. You can now launch the custom maze with the following command.
+```bash
+$ ros2 launch turtlebot3_gazebo custom_maze.launch.py
 ```
