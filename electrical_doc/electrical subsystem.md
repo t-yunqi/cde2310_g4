@@ -9,8 +9,8 @@ Our Electrical Subsystem consists of the following:
 6. Schematics 
 
 ## System Overview
-To fulfill the missions requirements, we built a dual-gate mechanism to deposit balls into the targets one at a time. Before the run starts, six balls are loaded onto the ramp behind the inner gate. When the robot docks, the inner gate opens to let exactly one ball roll into the middle holding chamber between the outer and inner gate. Then, the outer gate opens to drop that single ball into the tin can.
-Two SG90 servos act as the physcial gates and are driven by PWM signals directly from the Raspberry Pi's GPIO pins.
+To fulfill the mission requirements, we built a dual-gate mechanism to deposit balls into the targets one at a time. Before the run starts, six balls are loaded onto the ramp behind the inner gate. When the robot docks, the inner gate opens to let exactly one ball roll into the middle holding chamber between the outer and inner gate. Then, the outer gate opens to drop that single ball into the tin can.
+Two SG90 servos act as the physical gates and are driven by PWM signals directly from the Raspberry Pi's GPIO pins.
 
 
 ## Key Components for Payload Delivery 
@@ -33,7 +33,7 @@ Two SG90 servos act as the physcial gates and are driven by PWM signals directly
 The payload delivery is controlled by a dedicated ROS 2 node ('payload_delivery_node') that manages the two servos using a non-blocking queue system. This ensures the robot can continue processing sensor data while the gates are moving. Whenever the robot starts a run, the servos are initialized to their horizontal (closed) positions to block the balls. The delivery logic is split into two distinct mission protocols:
 
 ### Station A 
-Our groups specific delivery timing sequence is 6-4. Station A logic executes a fully automated, time-based released sequence to drop three balls. After the robot docks, a 'START_A' command is send over the '/station_cmd' topic to trigger the payload sequence.
+Our group's specific delivery timing sequence is 6-4. Station A logic executes a fully automated, time-based release sequence to drop three balls. After the robot docks, a 'START_A' command is sent over the '/station_cmd' topic to trigger the payload sequence.
 
 **Sequence**: 
     1. Inner gate opens and closes to load the first ball into the chamber, immediately followed by the outer gate opening and closing to drop it. 
@@ -43,18 +43,18 @@ Our groups specific delivery timing sequence is 6-4. Station A logic executes a 
 ### Station B 
 Station B logic utilizes the Aruco Marker detection to drop the balls. When the robot docks, a 'START_B' command activates the system but the balls do not drop immediately. Instead, each ball is dispensed one at a time whenever the USB camera detects an Aruco Marker (Tag ID 3) placed inside the moving tin can. 
 
-To prevent the system from double-firing on the same visual frame, there is a 2-second cooldown between triggers. Delivering all three balls requires four separate ArUco marker detections (passes):
+To prevent the system from double-firing on the same visual frame, there is a 2-second cooldown between triggers. Delivering all three balls require four separate ArUco marker detections (passes):
 
 To prevent the system from double-firing for the same visual frame, there is a 2 second cooldown between triggers. Delivering all 3 balls require 4 separate Aruco marker detections (passes).
 
 **Sequence**:
     1. **First detection**: Inner gate opens to load the first ball into the chamber.
     2. **Second & Third detection**: The outer gate opens to drop the single ball into tin can and inner gate immediately loads the next ball into chamber 
-    3. **Fourth detection**: The outer gate drops the third ball into the tin. The node disarms a sequence and publishes a 'FINISH_B' message so that the robot can resume movement.
+    3. **Fourth detection**: The outer gate drops the third ball into the tin. The node disarms the sequence and publishes a 'FINISH_B' message so that the robot can resume movement.
 
 
 ## Power Calculations 
-To ensure the robot can operate reliably during the full mission, we calculated the total power draw of the base system and all atttached peripherals.
+To ensure the robot can operate reliably during the full mission, we calculated the total power draw of the base system and all attached peripherals.
 
 ### Base Robot Power Consumption
 | Stages | Power Calculation |
@@ -65,7 +65,7 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 | **Average Power Consumption** | **7.31W** |
 
 ### Peripheral Power Consumption
-*Note: Power draw for Bare-Board Raspeberry Pi(3W) and LiDAR (1.32W) are already included in the Turtlebot base power consumption table above.*
+*Note: Power draw for Bare-Board Raspberry Pi(3W) and LiDAR (1.32W) are already included in the Turtlebot base power consumption table above.*
 
 | Components | Power (Per Unit) | Quantity | Total Power |
 | :--- | :--- | :---: | :--- |
