@@ -70,7 +70,7 @@ class Coordinator(Node):
         self.pending_dock_goal: Optional[str] = None
         self.last_known_dock_pose: Optional[PoseStamped] = None
 
-        # ===== Subscriptions =====
+        # Subscriptions
 
         # FIX 1: map uses TRANSIENT_LOCAL so a late subscriber still gets the last message
         map_qos = QoSProfile(
@@ -88,7 +88,7 @@ class Coordinator(Node):
             ArucoMarkers, '/cam_left/aruco_markers', self.aruco_left_cb, 10
         )
 
-        # ===== Publishers / actions =====
+        # Publishers / actions
         self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.dispense_pub = self.create_publisher(String, self.dispense_topic, 10)
 
@@ -99,11 +99,11 @@ class Coordinator(Node):
         self.dock_client = ActionClient(self, DockRobot, '/dock_robot')
         self.undock_client = ActionClient(self, UndockRobot, '/undock_robot')        
 
-        # ===== TF =====
+        # TF
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # ===== Timer =====
+        # Timer
         self.timer = self.create_timer(
             float(self.get_parameter('planner_period_sec').value),
             self.control_loop
@@ -112,7 +112,7 @@ class Coordinator(Node):
         self.dock_pose_timer = self.create_timer(0.1, self.dock_pose_loop)
         self.active_dock_tag_id: Optional[int] = None
 
-        # ===== State =====
+        # State
         self.map_msg: Optional[OccupancyGrid] = None
         self.goal_handle = None
         self.nav_busy = False
@@ -133,9 +133,7 @@ class Coordinator(Node):
         )
         self.get_logger().info('Coordinator node started.')
 
-    # ------------------------------------------------------------------
     # Basic callbacks
-    # ------------------------------------------------------------------
 
     def map_callback(self, msg: OccupancyGrid):
         self.map_msg = msg
@@ -170,9 +168,7 @@ class Coordinator(Node):
                 self.latest_detections[marker_id] = new_record
                 self.update_tag_pose_in_map(marker_id, new_record)
 
-    # ------------------------------------------------------------------
     # Time / TF helpers
-    # ------------------------------------------------------------------
 
     def now_sec(self) -> float:
         return self.get_clock().now().nanoseconds / 1e9
@@ -293,9 +289,7 @@ class Coordinator(Node):
                 f'to {target_frame}: {ex}'
             )
 
-    # ------------------------------------------------------------------
     # Geometry helpers
-    # ------------------------------------------------------------------
 
     @staticmethod
     def yaw_to_quaternion(yaw: float) -> Quaternion:
@@ -306,9 +300,7 @@ class Coordinator(Node):
         q.w = math.cos(yaw / 2.0)
         return q
 
-    # ------------------------------------------------------------------
     # Nav2 / docking helpers
-    # ------------------------------------------------------------------
 
     def publish_dock_pose(self, marker_id: int):
         pose = self.get_tag_pose_in_map(marker_id)
@@ -509,9 +501,7 @@ class Coordinator(Node):
             self.send_undock_goal()
             self.state = 'EXPLORE'
             
-    # ------------------------------------------------------------------
     # Dispense helpers
-    # ------------------------------------------------------------------
 
     def trigger_dispense(self, mode): 
         # mode should be "A" or "B"
@@ -528,9 +518,7 @@ class Coordinator(Node):
         self.state_entry_time = self.now_sec()
         self.get_logger().info(f'DISPENSE TRIGGERED: {msg.data}')
 
-    # ------------------------------------------------------------------
     # Frontier mode
-    # ------------------------------------------------------------------
 
     def run_frontier_mode(self):
         if self.nav_busy:
@@ -597,13 +585,11 @@ class Coordinator(Node):
         self.last_goal_type = 'fallback'
         self.send_nav_goal(goal)
 
-    # ------------------------------------------------------------------
     # Main coordinator state machine
-    # ------------------------------------------------------------------
 
     def control_loop(self):
         stationary_tag_id = int(self.get_parameter('stationary_tag_id').value)
-        midpoint_tag_id   = int(self.get_parameter('midpoint_tag_id').value)
+        midpoint_tag_id = int(self.get_parameter('midpoint_tag_id').value)
 
         if self.map_msg is None:
             self.get_logger().info('Waiting for map...', throttle_duration_sec=5.0)

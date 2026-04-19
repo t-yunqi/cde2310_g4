@@ -1,11 +1,12 @@
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess, TimerAction
+from launch.substitutions import Command
 
 
 def generate_launch_description():
     return LaunchDescription([
 
-        # Step 1: Cartographer
+        # 1. Start Cartographer immediately
         ExecuteProcess(
             cmd=[
                 'ros2', 'launch',
@@ -15,14 +16,20 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # Step 2: Navigation2
+        # 2. Start Nav2 Bringup
         TimerAction(
-            period=0.5,
+            period=0.3,
             actions=[
                 ExecuteProcess(
                     cmd=[
                         'ros2', 'launch',
-                        'turtlebot3_navigation2', 'navigation2.launch.py',
+                        'nav2_bringup', 'navigation_launch.py',
+                        ['map:=', Command([
+                            'ros2 pkg prefix turtlebot3_navigation2'
+                        ]), '/share/turtlebot3_navigation2/map/map.yaml'],
+                        ['params_file:=', Command([
+                            'ros2 pkg prefix turtlebot3_navigation2'
+                        ]), '/share/turtlebot3_navigation2/param/humble/burger.yaml'],
                         'use_sim_time:=False'
                     ],
                     output='screen'
@@ -30,9 +37,24 @@ def generate_launch_description():
             ]
         ),
 
-        # Step 3: Coordinator node
+        # 3. Start Nav2 RViz
         TimerAction(
-            period=5.0,
+            period=0.5,
+            actions=[
+                ExecuteProcess(
+                    cmd=[
+                        'ros2', 'launch',
+                        'nav2_bringup', 'rviz_launch.py',
+                        'use_sim_time:=False'
+                    ],
+                    output='screen'
+                )
+            ]
+        ),
+
+        # 4. Start coordinator
+        TimerAction(
+            period=10.0,
             actions=[
                 ExecuteProcess(
                     cmd=[
