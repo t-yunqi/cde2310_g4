@@ -14,12 +14,7 @@ additionally, for image nodes for usb cameras
  - #### Aruco Detection Node
  - #### Camera to baselink tf static transform files
 
-### published topics:
-* `/cam_left/image_raw` (`sensor_msgs.msg.Image`)
-* `/cam_right/image_raw` (`sensor_msgs.msg.Image`)
 
-* `/cam_left/camera_info` (`sensor_msgs.msg.CameraInfo`)
-* `/cam_right/camera_info` (`sensor_msgs.msg.CameraInfo`)
 
 <br></br>
 ## setup [ON RPI]
@@ -32,9 +27,6 @@ additionally, for image nodes for usb cameras
 6. colcon build
 7. source install/setup.bash
 8. chmod +x one.sh
-
-9. cd ~/launchfiles/camera_calibration_files
-10. cp * ~/.ros/camera-info
 ```
 ###### check that numpy version is 1.26.4, 
 
@@ -79,10 +71,10 @@ nano camult.py        #->change the camera directories in lines 48 and 54
 
 ## For debugging
 #### You can view the bounding boxes created by the aruco node from your computer by using the GUI_OVERLAY.py program.
-#### on your computer, go to the [pc_code directory](https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2/tree/main/software_doc/pc_code), and run
+#### on your computer, go to the [pc_code directory](../pc_code/), and run
 `python3 GUI_OVERLAY.py --camera cam_right/cam_left`   
 
 ![visualisation](../../images/GUI_OVERLAY.png)
 
 ## Customization
-#### 
+#### you may customize the type and size of the physical aruco tag, but you will have to modify the values in the [launch file](camult.py) 
