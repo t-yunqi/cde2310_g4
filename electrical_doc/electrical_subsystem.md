@@ -55,8 +55,8 @@ To prevent the system from double-firing for the same visual frame, there is a 2
 #### Sequence: 
 1. **First detection**: Inner gate opens to load the first ball into the chamber.
 2. **Second detection**: Outer gate opens to drop the first ball. Inner gate immediately loads the second ball into the chamber.
-3. **Third detection**: The outer gate opens to drop the second ball into tin can and inner gate immediately loads the third ball into chamber.
-4. **Fourth detection**: The outer gate drops the third ball into the tin. The node disarms the sequence and publishes a `FINISH_B` message so that the robot can resume movement.
+3. **Third detection**: Outer gate opens to drop the second ball into tin can and inner gate immediately loads the third ball into chamber.
+4. **Fourth detection**: Outer gate drops the third ball into the tin. The node disarms the sequence and publishes a `FINISH_B` message so that the robot can resume movement.
 
 
 ## Power Calculations 
@@ -112,4 +112,4 @@ The calculated runtimes for all scenarios are significantly more than required m
 
 **Raspberry Pi**:
 <img width="1805" height="1745" alt="image" src="https://github.com/user-attachments/assets/32616024-529a-4825-8c32-1134a4858e68" />
-The servos are connected to 5V and GND pins of the Raspberry Pi, with GPIO pins 18 and 12 configured as control signals. The cameras are connected through the Raspberry Pi’s USB ports.
+The servos are connected to 5V and GND pins of the Raspberry Pi, with GPIO pins 18 and 12 configured as control signals. The cameras are connected to the Raspberry Pi’s USB ports.
