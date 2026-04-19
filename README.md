@@ -1,13 +1,11 @@
-For first time setup
+ CDE2310 Turtlebot ICBM Introduction
+# Introduction
+## Mission Overview
+In this year’s mission, we have to design, implement, and validate an Autonomous Mobile Robot (AMR) workflow inspired by modern warehouse intralogistics. 
 
-cd turtlebot3_ws
 
-colcon build
+Group photo or something
+![fuck 2310](images/group%20photo)
 
-source ~/turtlebot3_ws/install/setup.bash
-
-To run with teleop do this:
-
-ros2 launch cde2310_g4_ay2526 custom_maze.launch.py
-
-This should get you rviz + gazebo with the custom maze and rviz is populated by the occupancy graph
+hello chin yan xu cmon cmon one last thing to do before you graduate
+![amimir](images/he_dreams.png)
