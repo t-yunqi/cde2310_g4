@@ -25,6 +25,11 @@ In this year’s mission, we have to design, implement, and validate an Autonomo
 
 ![Team photo](CDE2310_group4_photo.jpg)
 
+## Screen Recording of Final Run
+
+![](cde2310_final_run_screen_recording.mp4)
+
+
 ## User Guide
 
 1) Load payload one by one onto ball magazine ramp while ensuring the ball holders are in the down position
