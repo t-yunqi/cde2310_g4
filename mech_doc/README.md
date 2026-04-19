@@ -79,15 +79,15 @@ This document provides detailed instructions for printing, assembling, and integ
 - **Camera and Servo Motors**: Wire these components after the payload floor is fully secured, to avoid wiring complications.
 
 ### Servo Installation
-- Servos as press fit into the 3d printed mounts, masking tape can be used to secure further.
-
+- Servos as press fit into the 3d printed mounts, masking tape can be used to secure further.\
+  
 ---
 
 ## Mechanical and Assembly Recommendations
 - Ensure all glued components have fully set before testing the release mechanism.
 - Double-check servo alignments and wiring connections to ensure smooth operation.
 - Conduct initial launch tests at low servo power settings to verify mechanical stability and integrity.
-
+- 3d printed holes are 0.2mm smaller than bolt dimensions. This is so that bolts can be threaded through, increasing securing power.
 ---
 
 ## Design Reasoning
