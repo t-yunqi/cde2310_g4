@@ -9,12 +9,12 @@
 sudo apt install ros-humble-opennav-docking
 ```
 
-3. Create a new directory to clone the auto_nav package.
+3. Create a new directory to clone our cde2310_g4_ay2526 package.
 ``` bash 
 $ mkdir -p ~/colcon_ws/src 
 ```
 
-4. Create a ros2 package and git clone auto_nav code into the newly created package.
+4. Create a ros2 package and git clone cde2310_g4_ay2526 code into the newly created package.
 ```bash
 $ cd ~/colcon_ws/src
 $ git clone https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git ./cde2310_g4_ay2526 -b pc_code
@@ -36,7 +36,7 @@ $ colcon build
 $ cp ~/colcon_ws/src/cde2310_g4_ay2526/nav2_params/burger.yaml ~/turtlebot3_ws/src/turtlebot3/turtlebot3_navigation2/param/humble
 ```
 
-8. Reconfigure the planner server's lattice_filepath in burger.yaml. Find the following line and edit it to the correct path:
+8. Reconfigure the planner server's `lattice_filepath` in burger.yaml. Find the following line and edit it to the correct path:
 ```
       lattice_filepath: "/home/tanyunqi/burger_primitive.json"
 ```
@@ -60,4 +60,25 @@ $ ros2 launch nav2_bringup navigation_launch.py \
   use_sim_time:=False
 $ ros2 launch nav2_bringup rviz_launch.py use_sim_time:=False
 $ ros2 run cde2310_g4_ay2526 frontier_explorer
+```
+
+## Camera visualisation
+1. Install ros2_aruco package and opencv dependencies.
+``` bash
+$ pip install opencv-contrib-python
+$ cd ~/colcon_ws/src
+$ git clone https://github.com/JMU-ROBOTICS-VIVA/ros2_aruco.git
+```
+
+2. Build and source package.
+``` bash
+$ cd ~/colcon_ws
+$ colcon build --packages-select ros2_aruco
+$ source install/setup.bash
+```
+
+3. Launch GUI_OVERLAY.py
+``` bash
+$ cd ~/colcon_ws/src/cde2310_g4_ay2526
+$ python3 GUI_OVERLAY.py --camera <cam_left/cam_right>
 ```
