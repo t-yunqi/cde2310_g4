@@ -22,7 +22,6 @@ Two SG90 servos act as the physical gates and are driven by PWM signals directly
 | Existing Components | Units|
 | :--- | :--- |
 | LiDAR | x1 |
-| USB Camera | x2 |
 | Dynamixel Motors | x2 |
 | LiPO Battery | x1 |
 | Raspberry Pi 4 | x1 |
@@ -42,8 +41,6 @@ Our group's specific delivery timing sequence is 6-4. Station A logic executes a
     4. Once finished, the node publishes a 'FINISH_A' message to the '/mission_complete' topic so the robot can resume movement.
 ### Station B 
 Station B logic utilizes the Aruco Marker detection to drop the balls. When the robot docks, a 'START_B' command activates the system but the balls do not drop immediately. Instead, each ball is dispensed one at a time whenever the USB camera detects an Aruco Marker (Tag ID 3) placed inside the moving tin can. 
-
-To prevent the system from double-firing on the same visual frame, there is a 2-second cooldown between triggers. Delivering all three balls require four separate ArUco marker detections (passes):
 
 To prevent the system from double-firing for the same visual frame, there is a 2 second cooldown between triggers. Delivering all 3 balls require 4 separate Aruco marker detections (passes).
 
@@ -92,7 +89,7 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 | **Average load** | 19.98Wh ÷ 11.81W | **~101.4min** |
 | **Maximum load** | 19.98Wh ÷ 15.98W | **~75.0min** |
 
-Battery can last for more than enough time.
+The calculated runtime significantly exceeds the required mission duration.
 
 ## Schematics
 
