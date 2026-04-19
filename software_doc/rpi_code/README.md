@@ -14,6 +14,12 @@ additionally, for image nodes for usb cameras
  - #### Aruco Detection Node
  - #### Camera to baselink tf static transform files
 
+### published topics:
+* `/cam_left/image_raw` (`sensor_msgs.msg.Image`)
+* `/cam_right/image_raw` (`sensor_msgs.msg.Image`)
+
+* `/cam_left/camera_info` (`sensor_msgs.msg.CameraInfo`)
+* `/cam_right/camera_info` (`sensor_msgs.msg.CameraInfo`)
 
 <br></br>
 ## setup [ON RPI]
@@ -50,7 +56,7 @@ launch camera image nodes
 nano cam_launch.py    #->change the camera directories in lines 10 and 16 
 nano camult.py        #->change the camera directories in lines 48 and 54
 ```
-![example](images/launchfileparameters.png)
+![configure camera parameters](../../images/launchfileparameters.png)
 
 
 #### move camera calibration files to correct destination
@@ -66,3 +72,17 @@ nano camult.py        #->change the camera directories in lines 48 and 54
 1. cd ~/launchfiles
 2. ./one.sh rpi
 ```
+
+## Additional Notes
+#### For all nodes using the cam_left namespace, in the physical bot, the video feed comes from the bottom camera; 
+#### nodes using the cam_right namespace correspond to the top camera.
+
+## For debugging
+#### You can view the bounding boxes created by the aruco node from your computer by using the GUI_OVERLAY.py program.
+#### on your computer, go to the [pc_code directory](https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2/tree/main/software_doc/pc_code), and run
+`python3 GUI_OVERLAY.py --camera cam_right/cam_left`   
+
+![visualisation](../../images/GUI_OVERLAY.png)
+
+## Customization
+#### 

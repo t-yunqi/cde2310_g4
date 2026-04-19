@@ -118,9 +118,9 @@ def generate_launch_description():
                 name='aruco_node',
                 namespace=ns,
                 parameters=[{
-                    'marker_size':          0.092,
-                    'aruco_dictionary_id':  'DICT_4X4_50',
-                    'image_topic':          image_topic,
+                    'marker_size':          0.092,           #marker size in meters (adjust based on your printed marker size)
+                    'aruco_dictionary_id':  'DICT_4X4_50',   #choose based on your printed marker type, 4X4 is better in general 
+                    'image_topic':          image_topic,        
                     'camera_info_topic':    info_topic,
                 }],
             )

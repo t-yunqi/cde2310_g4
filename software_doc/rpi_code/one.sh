@@ -84,6 +84,13 @@ launch_rpi() {
     cd ~/aruco
     ros2 launch camult.py
   ) &
+  sleep 2
+  echo "Starting payload..."
+  (
+    source "$ROS_SETUP"
+    [ -f "$RPI_WS_SETUP" ] && source "$RPI_WS_SETUP"
+    python3 payload.py
+  ) &
   wait
 }
 
