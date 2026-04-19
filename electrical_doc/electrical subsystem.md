@@ -90,7 +90,7 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 | **Normal Operation under Maximum Load** | 19.98Wh ÷ 14.04W | **~85.4min** |
 | **Maximum** | 19.98Wh ÷ 15.98W | **~75.0min** |
 
-The calculated runtime for all scenarios significantly exceeds the required mission duration.
+The calculated runtimes for all scenarios are significantly more than required mission duration.
 
 ## Schematics
 
