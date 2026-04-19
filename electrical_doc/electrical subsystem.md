@@ -59,7 +59,6 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 | **Initial Boot Up** | 11.1V x 800mA = **8.880W** |
 | **Idle** | 11.1V x 550mA = **6.11W** |
 | **During Operation** | 11.1V x 625mA = **6.94W** |
-| **Average Power Consumption** | **7.31W** |
 
 ### Peripheral Power Consumption
 *Note: Power draw for Bare-Board Raspberry Pi(3W) and LiDAR (1.32W) are already included in the Turtlebot base power consumption table above.*
@@ -76,7 +75,8 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 | Scenario | Base Robot | Peripherals | Total Draw |
 | :--- | :--- | :--- | :--- |
 | **Minimum** | 6.11W *(Idle)* | 4.5W | **10.61W** |
-| **Average** | 7.31W | 4.5W | **11.81W** |
+| **Normal Operation under Minimum Load** | 6.94W | 4.5W | **11.44W** |
+| **Normal Operation under Maximum Load** | 6.94W | 7.1W | **14.04W** |
 | **Maximum** | 8.88W *(Boot)* | 7.1W | **15.98W** |
 
 **Safe Usage:** Maximum power draw does not exceed capacity
@@ -85,11 +85,12 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 
 | Scenario | Calculation | Estimated Runtime |
 | :--- | :--- | :--- |
-| **Minimum load** | 19.98Wh ÷ 10.61W | **~112.8min** |
-| **Average load** | 19.98Wh ÷ 11.81W | **~101.4min** |
-| **Maximum load** | 19.98Wh ÷ 15.98W | **~75.0min** |
+| **Minimum** | 19.98Wh ÷ 10.61W | **~112.8min** |
+| **Normal Operation under Minimum Load** | 19.98Wh ÷ 11.44W | **~105.0min** |
+| **Normal Operation under Maximum Load** | 19.98Wh ÷ 14.04W | **~85.2min** |
+| **Maximum** | 19.98Wh ÷ 15.98W | **~75.0min** |
 
-The calculated runtime significantly exceeds the required mission duration.
+The calculated runtime for all scenarios significantly exceeds the required mission duration.
 
 ## Schematics
 
