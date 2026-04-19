@@ -11,7 +11,9 @@ Our Electrical Subsystem consists of the following:
 ## System Overview
 To fulfill the mission requirements, we built a dual-gate mechanism to deposit balls into the targets one at a time. Before the run starts, six balls are loaded onto the ramp behind the inner gate. When the robot docks, the inner gate opens to let exactly one ball roll into the middle holding chamber between the outer and inner gate. Then, the outer gate opens to drop that single ball into the tin can.
 Two SG90 servos act as the physical gates and are driven by PWM signals directly from the Raspberry Pi's GPIO pins. The inner gate separates the ramp from the holding chamber and the outer gate separates the holding chamber from the tin can. 
-Ball rolling flow: Ramp --> [Inner Gate] --> Holding Chamber --> [Outer Gate] --> Tin Can
+```
+Ramp → [Inner Gate] → Holding Chamber → [Outer Gate] → Tin Can
+```
 
 ## Key Components for Payload Delivery 
 | Payload Components | Units|
@@ -23,7 +25,7 @@ Ball rolling flow: Ramp --> [Inner Gate] --> Holding Chamber --> [Outer Gate] --
 | :--- | :--- |
 | LiDAR | x1 |
 | Dynamixel Motors | x2 |
-| LiPO Battery | x1 |
+| LiPO Battery (19.98Wh) | x1 |
 | Raspberry Pi 4 | x1 |
 | OpenCR | x1  |
 
@@ -34,20 +36,26 @@ The payload delivery is controlled by a dedicated ROS 2 node (`payload_delivery_
 ### Station A 
 Our group's specific delivery timing sequence is 6-4. Station A logic executes a fully automated, time-based release sequence to drop three balls. After the robot docks, a `START_A` command is sent over the `/station_cmd` topic to trigger the payload sequence.
 
-**Sequence**: 
-    1. Inner gate opens and closes to load the first ball into the chamber, immediately followed by the outer gate opening and closing to drop it. 
-    2. The system waits for 5 seconds, then repeats the sequence for the second ball. This 5-second delay, combined with the 1-second physical drop time, satisfies the 6-second interval requirement.
-    3. The system waits for another 3 seconds and then repeats the sequence for the third ball. This 3-second delay, combined with the 1-second physical drop time, satisfies the 4-second interval requirement.
-    4. Once finished, the node publishes a `FINISH_A` message to the `/mission_complete` topic so the robot can resume movement.
+#### Sequence: 
+1. **First Ball**:
+   Inner gate opens and closes to load the first ball into the chamber, immediately followed by the outer gate opening and closing to drop it. 
+2.  **Second Ball**:
+The system waits for 5 seconds, then repeats the sequence for the second ball. This 5-second delay, combined with the 1-second physical drop time, satisfies the 6-second interval requirement.
+3. **Third Ball**:
+The system waits for another 3 seconds and then repeats the sequence for the third ball. This 3-second delay, combined with the 1-second physical drop time, satisfies the 4-second interval requirement.
+4. **Mission Complete**:
+Once finished, the node publishes a `FINISH_A` message to the `/mission_complete` topic so the robot can resume movement.
+
 ### Station B 
-Station B logic utilizes the Aruco Marker detection to drop the balls. When the robot docks, a `START_B` command activates the system but the balls do not drop immediately. Instead, each ball is dispensed one at a time whenever the USB camera detects an Aruco Marker (Tag ID 3) placed inside the moving tin can. 
+Station B logic uses the Aruco Marker detection to drop the balls. When the robot docks, a `START_B` command activates the system but the balls do not drop immediately. Instead, each ball is dispensed one at a time whenever the USB camera detects an Aruco Marker (Tag ID 3) placed inside the moving tin can. 
 
 To prevent the system from double-firing for the same visual frame, there is a 2 second cooldown between triggers. Delivering all 3 balls requires 4 separate Aruco marker detections (passes).
 
-**Sequence**:
-    1. **First detection**: Inner gate opens to load the first ball into the chamber.
-    2. **Second & Third detection**: The outer gate opens to drop the single ball into tin can and inner gate immediately loads the next ball into chamber.
-    3. **Fourth detection**: The outer gate drops the third ball into the tin. The node disarms the sequence and publishes a `FINISH_B` message so that the robot can resume movement.
+#### Sequence: 
+1. **First detection**: Inner gate opens to load the first ball into the chamber.
+2. **Second detection**: Outer gate opens to drop the first ball. Inner gate immediately loads the second ball into the chamber.
+3. **Third detection**: The outer gate opens to drop the second ball into tin can and inner gate immediately loads the third ball into chamber.
+4. **Fourth detection**: The outer gate drops the third ball into the tin. The node disarms the sequence and publishes a `FINISH_B` message so that the robot can resume movement.
 
 
 ## Power Calculations 
@@ -56,12 +64,12 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 ### Base Robot Power Consumption
 | Stages | Power Calculation |
 | :--- | :--- |
-| **Initial Boot Up** | 11.1V x 800mA = **8.880W** |
+| **Initial Boot Up** | 11.1V x 800mA = **8.88W** |
 | **Idle** | 11.1V x 550mA = **6.11W** |
 | **During Operation** | 11.1V x 625mA = **6.94W** |
 
 ### Peripheral Power Consumption
-*Note: Table above reflects the full Turtlebot base system, which already includes the Rasberry Pi and LiDAR. These are therefore not counted again in the calculations below.*
+*Note: Table above reflects the full Turtlebot base system, which already includes the Raspberry Pi and LiDAR. These are therefore not counted again in the calculations below.*
 
 | Components | Power (Per Unit) | Quantity | Total Power |
 | :--- | :--- | :---: | :--- |
@@ -80,6 +88,7 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 | **Maximum** | 8.88W *(Boot)* | 7.1W | **15.98W** |
 
 **Safe Usage:** Maximum power draw does not exceed capacity
+
 ### Estimated Runtime
 *Runtime (h) = Battery Capacity (Wh) ÷ Total Power (W)*
 
@@ -93,13 +102,13 @@ To ensure the robot can operate reliably during the full mission, we calculated 
 The calculated runtimes for all scenarios are significantly more than required mission duration.
 
 ## Schematics
-
 ### Electrical Conceptual Diagram
 <img width="1805" height="1174" alt="image" src="https://github.com/user-attachments/assets/7fe40106-f4ac-4223-88d0-8409a73c6873" />
 
-### Open CR
+### Electrical Wiring 
+**OpenCR**:
 <img width="2128" height="1644" alt="image" src="https://github.com/user-attachments/assets/42a9c008-330a-4d79-a182-ca96603f030d" />
 
-### Raspberry Pi 
+**Raspberry Pi**:
 <img width="1805" height="1745" alt="image" src="https://github.com/user-attachments/assets/32616024-529a-4825-8c32-1134a4858e68" />
 The servos are connected to 5V and GND pins of the Raspberry Pi, with GPIO pins 18 and 12 configured as control signals. The cameras are connected through the Raspberry Pi’s USB ports.
