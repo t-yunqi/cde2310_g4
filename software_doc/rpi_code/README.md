@@ -48,22 +48,24 @@ launch camera image nodes
 nano cam_launch.py    #->change the camera directories in lines 10 and 16 
 nano camult.py        #->change the camera directories in lines 48 and 54
 ```
-![configure camera parameters](../../images/launchfileparameters.png)
+
 
 
 #### move camera calibration files to correct destination
 ```
-1. cp <where your camera calibration .yaml files are at>/* ~/.ros/camera_info
+1. cp <camera_calibration yaml file location>/* ~/.ros/camera_info
 ```
 ###### **_do take note that the camera resolution during operation and calibration has to be the same_**
 
-<br></br>
+### Customization
+#### you may customize the type and size of the physical aruco tag, but you will have to modify the values in the [launch file](camult.py) 
+##### also change the lines in [camult.py](camult.py) labelled critical 
 
 ## launch all files
 ```
 1. cd ~/launchfiles
 2. ./one.sh rpi
-```
+``` 
 
 ## Additional Notes
 #### For all nodes using the cam_left namespace, in the physical bot, the video feed comes from the bottom camera; 
@@ -76,5 +78,3 @@ nano camult.py        #->change the camera directories in lines 48 and 54
 
 ![visualisation](../../images/GUI_OVERLAY.png)
 
-## Customization
-#### you may customize the type and size of the physical aruco tag, but you will have to modify the values in the [launch file](camult.py) 
