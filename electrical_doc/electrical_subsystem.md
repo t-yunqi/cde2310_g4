@@ -103,7 +103,7 @@ The calculated runtimes for all scenarios are significantly more than required m
 
 ## Schematics
 ### Electrical Conceptual Diagram
-<img width="1805" height="1174" alt="image" src="https://github.com/user-attachments/assets/7fe40106-f4ac-4223-88d0-8409a73c6873" />
+<img width="1781" height="1156" alt="image" src="https://github.com/user-attachments/assets/203e70d0-bf2c-4f29-aab1-442d805ce6be" />
 
 ### Electrical Wiring 
 **OpenCR**:
