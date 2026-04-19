@@ -8,4 +8,4 @@ Group photo or something
 ![fuck 2310](images/group%20photo)
 
 hello chin yan xu cmon cmon one last thing to do before you graduate
-![amimir](images/amimir)
+![amimir](images/he_dreams.png)
