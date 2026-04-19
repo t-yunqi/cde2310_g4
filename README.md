@@ -22,7 +22,7 @@ $ git clone https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git ./
 
 5. Replace navigation_launch.py in your Navigation2 stack to include docking server node.
 ```bash
-$ sudo cp ~/colcon_ws/src/cde2310_g4_ay2526/launch/navigation_launch.py /opt/ros/humble/share/nav2_bringup/launch/
+$ sudo mv ~/colcon_ws/src/cde2310_g4_ay2526/launch/navigation_launch.py /opt/ros/humble/share/nav2_bringup/launch/
 ```
 
 6. You can now build the package on your laptop. 
@@ -31,16 +31,16 @@ $ cd ~/colcon_ws
 $ colcon build
 ```
 
-7. Copy the navigation parameters file to your turtlebot3_navigation2 package
-```bash
-$ cp ~/colcon_ws/src/cde2310_g4_ay2526/nav2_params/burger.yaml ~/turtlebot3_ws/src/turtlebot3/turtlebot3_navigation2/param/humble
-```
-
-8. Reconfigure the planner server's `lattice_filepath` in burger.yaml. Find the following line and edit it to the correct path:
+7. Reconfigure the planner server's `lattice_filepath` in burger.yaml. Find the following line and edit it to the correct path:
 ```
       lattice_filepath: "/home/tanyunqi/burger_primitive.json"
 ```
 > You should also modify your robot footprint under the ``footprint`` field under ``global_costmap`` using the right hand rule based on your CAD to prevent any inconsistencies.
+
+8. Copy the navigation parameters file to your turtlebot3_navigation2 package
+```bash
+$ cp ~/colcon_ws/src/cde2310_g4_ay2526/nav2_params/burger.yaml ~/turtlebot3_ws/src/turtlebot3/turtlebot3_navigation2/param/humble
+```
 
 9. Run frontier explorer or coordinator using the following commands.
 ```bash
