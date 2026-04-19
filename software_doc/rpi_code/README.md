@@ -19,19 +19,22 @@ additionally, for image nodes for usb cameras
 <br></br>
 ## setup [ON RPI]
 ```bash
-1. mkdir launchfiles && cd launchfiles
-2. git clone --branch rpi_code --single-branch https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git
-3. rosdep update
-4. rosdep install --from-paths src --ignore-src -r -y
-5. pip3 install opencv-contrib-python transforms3d
-6. colcon build
-7. source install/setup.bash
-8. chmod +x one.sh
+1. sudo apt install ros-humble-cv-bridge ros-humble-image-geometry ros-humble-tf2-ros ros-humble-tf-transformations ros-humble-sensor-msgs ros-humble-geometry-msgs
+2. mkdir launchfiles && cd launchfiles
+3. git clone --branch rpi_code --single-branch https://github.com/ChinYanXu/CDE2310_g4_AY2526_turtlebot_ROS2.git
+4. rosdep update
+5. rosdep install --from-paths src --ignore-src -r -y
+6. pip3 install opencv-contrib-python transforms3d 
+7. pip install empy==3.3.4 catkin-pkg==1.1.0 lark==1.1.1
+8. colcon build
+9. source install/setup.bash
+10. chmod +x one.sh
 ```
-###### check that numpy version is 1.26.4, 
+#### check that numpy version is 1.26.4, 
 
-> python3 -c "import numpy; print(numpy.__version__)"
-
+```
+python3 -c "import numpy; print(numpy.__version__)"
+```
 ###### if it isnt, install numpy version 1.26.4
 ```
 pip uninstall numpy -y
@@ -39,6 +42,7 @@ pip install numpy==1.26.4
 ```
 
 ### camera calibration
+---
 #### You should follow [this guide](https://docs.ros.org/en/kilted/p/camera_calibration/doc/tutorial_mono.html) to obtain your camera calibration files
 launch camera image nodes 
 ```
@@ -46,7 +50,6 @@ launch camera image nodes
 1. v4l2-ctl --list-devices
 #edit launch file parameters
 nano cam_launch.py    #->change the camera directories in lines 10 and 16 
-nano camult.py        #->change the camera directories in lines 48 and 54
 ```
 
 
@@ -58,6 +61,7 @@ nano camult.py        #->change the camera directories in lines 48 and 54
 ###### **_do take note that the camera resolution during operation and calibration has to be the same_**
 
 ### Customization
+---
 #### you may customize the type and size of the physical aruco tag, but you will have to modify the values in the [launch file](camult.py) 
 ##### also change the lines in [camult.py](camult.py) labelled critical 
 
