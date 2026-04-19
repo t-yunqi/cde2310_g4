@@ -10,7 +10,8 @@ Our Electrical Subsystem consists of the following:
 
 ## System Overview
 To fulfill the mission requirements, we built a dual-gate mechanism to deposit balls into the targets one at a time. Before the run starts, six balls are loaded onto the ramp behind the inner gate. When the robot docks, the inner gate opens to let exactly one ball roll into the middle holding chamber between the outer and inner gate. Then, the outer gate opens to drop that single ball into the tin can.
-Two SG90 servos act as the physical gates and are driven by PWM signals directly from the Raspberry Pi's GPIO pins. The inner gate separates the ramp from the holding chamber and the outer gate separates the holding chamber from the tin can. 
+Two SG90 servos act as the physical gates and are driven by PWM signals directly from the Raspberry Pi's GPIO pins. The inner gate separates the ramp from the holding chamber and the outer gate separates the holding chamber from the tin can. \
+**Ball path:**  
 ```
 Ramp → [Inner Gate] → Holding Chamber → [Outer Gate] → Tin Can
 ```
