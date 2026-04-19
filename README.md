@@ -27,7 +27,7 @@ In this year’s mission, we have to design, implement, and validate an Autonomo
 
 ## Screen Recording of Final Run
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/Q-2e3BBZrv4?si=3Bjobi04rnq_OCp_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[Click here to watch the recording](https://youtu.be/Q-2e3BBZrv4?si=Jl6o72isQL6w0Ewp)
 
 ## User Guide
 
