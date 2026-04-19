@@ -44,7 +44,7 @@ Initially, the nearest frontier region was chosen as the destination, but this c
 
 If a suitable frontier region is not found, the modules selects a fallback destination by choosing a free-space point near the explored-unexplored boundary that is sufficiently far from obstacles and recently visited fallback points. This allows the robot to continue roaming even when the map is sufficiently explored.
 
-## Coordinator
+## Coordinator: `coordinator.py`
 The coordinator orchestrates the overall mission logic, including maze exploration, docking, payload delivery triggering, and undocking. Actual navigation is handled by the Nav2 `NavigateToPose` action, while docking and undocking are handled using the Nav2 docking actions. When the robot is in the `EXPLORE` state, it uses frontier detection to search the maze. If the stationary or moving station ArUco tag is detected, the coordinator transitions to the corresponding docking state by cancelling the current exploration goal. Once docking succeeds, the coordinator triggers payload delivery and waits for the payload node to report completion before commanding the robot to undock and resume exploration.
 
 ![Coordinator State Diagram](Coordinator_state_diagram.png)
@@ -56,6 +56,13 @@ The coordinator orchestrates the overall mission logic, including maze explorati
 | GO_TO_MIDPOINT | The robot has detected the ArUco tag associated with the moving-station mission and is attempting to dock. |
 | WAIT_A_COMPLETE | The robot has triggered payload delivery for stationary station and is waiting for the payload sequence to finish. |
 | WAIT_B_COMPLETE | The robot has triggered payload delivery for moving station and is waiting for the payload sequence to finish. |
+
+## Nav2 Planner & Controller
+For our Navigation2 stack parameters, we referred extensively to [AutomaticAddison's tuning guide](https://automaticaddison.com/ros-2-navigation-tuning-guide-nav2) as well as [Nav2's tuning guide](https://docs.nav2.org/tuning/index.html). The Nav2 planner server is in charge of the algorithms for path planning, given a `NavigateToGoal` pose. The Nav2 controller server supplies the robot with control instructions and abstracts away movement control in order to complete tasks like following the path given by the planner server, or avoiding obstacles. 
+
+Our chosen planner server is Smac Lattice Planner which was recommended for our Turtlebot3 type, a non-circular, differential robot. This planner is able to incorporate the exact footprint of our robot, allowing us to make full use of the small width of our robot to navigate through tight spaces. 
+
+Our chosen controller server is Regulated Pure Pursuit which is the best controller for exact path following while incorporating effective obstacle avoidance using heuristics. Other controllers like MPPI and DWB are optimised for dynamic obstacle avoidance, a capability that our robot does not require in this mission. This controller also allows full optimisation of movement according to the planner server.
 
 ## Servo Code
 The `payload.py` program controls the two servos used for payload release. It subscribes to `/station_cmd` for mission commands and publishes `/mission_complete` when dispensing is done. For the stationary station, the payload sequence is executed immediately after receiving `START_A`. For the moving station, the node is first armed by `START_B`, and payload release is then triggered step-by-step based on ArUco detections from the right camera. This allows the moving station payload to be dispensed only when the target is in the correct position.
