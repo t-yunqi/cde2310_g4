@@ -10,10 +10,8 @@ def generate_launch_description():
     #    NOTE: cam_left / cam_right values below are placeholders — update them.
     # ──────────────────────────────────────────────────────────────────────────
     camera_transforms = [
-        [ 0.10391, 0.0, 0.02824, 0, 0, 0, 'base_link', 'cam_left_camera_link'],   # TODO: verify values
-        [ 0.0805,  0.0, 0.11015, 0, 0, 0, 'base_link', 'cam_right_camera_link'],  # TODO: verify values
-        # Add rpi_camera_link → base_link here when measurements are ready:
-        # [ x, y, z, yaw, pitch, roll, 'base_link', 'rpi_camera_link'],
+        [ 0.10391, 0.0, 0.02824, 0, 0, 0, 'base_link', 'cam_left_camera_link'],   # [CRITICAL ]MODIFY THESE VALUES BASED ON YOUR CAMERA MOUNTING CONFIGURATION FROM YOUR CAD MODEL (x, y, z in meters; yaw, pitch, roll in radians)
+        [ 0.0805,  0.0, 0.11015, 0, 0, 0, 'base_link', 'cam_right_camera_link'],  # [CRITICAL ]MODIFY THESE VALUES BASED ON YOUR CAMERA MOUNTING CONFIGURATION FROM YOUR CAD MODEL (x, y, z in meters; yaw, pitch, roll in radians)
     ]
 
     nodes = []
@@ -66,7 +64,7 @@ def generate_launch_description():
                 namespace=ns,
                 parameters=[{
                     'video_device':    device,
-                    'image_width':     640,
+                    'image_width':     640,                    #CAN BE REDUCED TO 320x240 FOR FASTER PROCESSING, BUT MAY AFFECT ARUCO DETECTION RANGE/ACCURACY
                     'image_height':    480,
                     'pixel_format':    'mjpeg2rgb',
                     'frame_id':        f'{ns}_camera_link',
@@ -118,9 +116,9 @@ def generate_launch_description():
                 name='aruco_node',
                 namespace=ns,
                 parameters=[{
-                    'marker_size':          0.092,
-                    'aruco_dictionary_id':  'DICT_4X4_50',
-                    'image_topic':          image_topic,
+                    'marker_size':          0.092,           #marker size in meters (adjust based on your printed marker size)
+                    'aruco_dictionary_id':  'DICT_4X4_50',   #choose based on your printed marker type, 4X4 is better in general 
+                    'image_topic':          image_topic,        
                     'camera_info_topic':    info_topic,
                 }],
             )
