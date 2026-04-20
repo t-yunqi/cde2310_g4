@@ -65,7 +65,16 @@ Our chosen planner server is **Smac Lattice Planner** which was recommended for 
 Our chosen controller server is **Regulated Pure Pursuit** which is the best controller for exact path following while incorporating effective obstacle avoidance using heuristics. Other controllers like MPPI and DWB are optimised for dynamic obstacle avoidance, a capability that our robot does not require in this mission. This controller also allows full optimisation of movement according to the planner server.
 
 ## Docking
-For docking, we initially tried manual docking using `NavigateToPose` goals. However, due to obstacle avoidance measures from the Nav2 controller, the robot was unable to dock close enough to the receptable using this method. Hence, we decided to integrate Nav2's Docking server which abstracted away precise movement control. 
+For docking, we initially tried manual docking using `NavigateToPose` goals. However, due to obstacle avoidance measures from the Nav2 controller, the robot was unable to dock close enough to the receptable using this method. Hence, we decided to integrate [Nav2's Docking](https://docs.nav2.org/tutorials/docs/using_docking.html) server which abstracted away precise movement control. 
+
+We interfaced with this server through the `DockRobot` and `UndockRobot` actions. The dock poses are set to use external detection poses in the `detected_dock_pose` topic. Our coordinator node handles the receiving of ArUco tag poses from the detection node on the RPi, transforms these poses to link to the map in the expected orientation, then publishes the corresponding pose on `detected_dock_pose` upon sending a DockRobot goal. Due to noise, the received ArUco tag pose from the robot may be slightly inaccurate. Our coordinator handles this by fixing the x and y orientation such that the tag pose is always perpendicular to the ground, while keeping the yaw variable. 
+
+Multiple parameters in the docking server have been tuned to optimise the docking distance and accuracy, namely the following:
+```
+docking_threshold: 0.03
+staging_x_offset: -0.28
+external_detection_translation_x: -0.17
+```
 
 ## Servo Code
 The `payload.py` program controls the two servos used for payload release. It subscribes to `/station_cmd` for mission commands and publishes `/mission_complete` when dispensing is done. For the stationary station, the payload sequence is executed immediately after receiving `START_A`. For the moving station, the node is first armed by `START_B`, and payload release is then triggered step-by-step based on ArUco detections from the right camera. This allows the moving station payload to be dispensed only when the target is in the correct position.
